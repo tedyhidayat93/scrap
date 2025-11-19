@@ -4,6 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { AlertTriangle, Shield, AlertCircle, TrendingUp } from "lucide-react"
+import { useState } from "react"
+import { Button } from "@/components/ui/button"
 
 interface AccountRiskAnalysisProps {
   data: {
@@ -27,6 +29,8 @@ interface AccountRisk {
 
 export function AccountRiskAnalysis({ data }: AccountRiskAnalysisProps) {
   const { comments, isLoading } = data
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
 
   if (isLoading) {
     return (
@@ -141,6 +145,12 @@ export function AccountRiskAnalysis({ data }: AccountRiskAnalysisProps) {
   const mediumCount = accountRisks.filter((a) => a.riskLevel === "medium").length
   const lowCount = accountRisks.filter((a) => a.riskLevel === "low").length
 
+  const totalAccounts = accountRisks.length
+  const totalPages = Math.max(1, Math.ceil(totalAccounts / pageSize))
+  const startIndex = (page - 1) * pageSize
+  const endIndex = Math.min(startIndex + pageSize, totalAccounts)
+  const pageRisks = accountRisks.slice(startIndex, endIndex)
+
   return (
     <Card className="bg-card border-border">
       <CardHeader className="pb-3">
@@ -166,8 +176,9 @@ export function AccountRiskAnalysis({ data }: AccountRiskAnalysisProps) {
         {accountRisks.length === 0 ? (
           <div className="text-center py-4 text-sm text-muted-foreground">No accounts to analyze</div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-            {accountRisks.slice(0, 20).map((account) => {
+          <>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+              {pageRisks.map((account) => {
               const Icon = riskLevelIcons[account.riskLevel]
               return (
                 <div
@@ -201,8 +212,34 @@ export function AccountRiskAnalysis({ data }: AccountRiskAnalysisProps) {
                   </div>
                 </div>
               )
-            })}
-          </div>
+              })}
+            </div>
+
+            <div className="flex items-center justify-between gap-4 mt-3">
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}>
+                  Prev
+                </Button>
+                <div className="text-sm text-muted-foreground">Page {page} / {totalPages}</div>
+                <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages}>
+                  Next
+                </Button>
+              </div>
+              <div className="flex items-center gap-2">
+                <label className="text-xs text-muted-foreground">Per page:</label>
+                <select
+                  value={pageSize}
+                  onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1) }}
+                  className="text-sm bg-transparent border border-border rounded px-2 py-1"
+                >
+                  <option value={5}>5</option>
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                </select>
+              </div>
+              <div className="text-xs text-muted-foreground">Total accounts: {accountRisks.length}</div>
+            </div>
+          </>
         )}
       </CardContent>
     </Card>

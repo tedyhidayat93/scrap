@@ -21,6 +21,8 @@ export function ProComments({ data }: ProCommentsProps) {
   const [aiProData, setAiProData] = useState<any>(null)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(5)
 
   const basicProComments = useMemo(() => {
     if (comments.length === 0) return []
@@ -146,8 +148,19 @@ export function ProComments({ data }: ProCommentsProps) {
               </div>
             </div>
 
-            <div className="space-y-3 max-h-[400px] overflow-y-auto">
-              {displayData.proComments.slice(0, 10).map((comment: any, index: number) => (
+            <div className="space-y-3">
+              {(() => {
+                const list = displayData.proComments || []
+                const total = list.length
+                const totalPages = Math.max(1, Math.ceil(total / pageSize))
+                const start = (page - 1) * pageSize
+                const end = Math.min(start + pageSize, total)
+                const pageList = list.slice(start, end)
+
+                return (
+                  <>
+                    <div className="space-y-3 max-h-[400px] overflow-y-auto">
+                      {pageList.map((comment: any, index: number) => (
                 <div key={comment.cid || index} className="p-4 rounded-lg bg-muted/30 border border-border/50">
                   <div className="flex items-start gap-3">
                     <Avatar className="h-10 w-10">
@@ -186,7 +199,41 @@ export function ProComments({ data }: ProCommentsProps) {
                     </div>
                   </div>
                 </div>
-              ))}
+                      ))}
+                    </div>
+
+                    { (displayData.proComments?.length || 0) > pageSize && (
+                      <div className="flex items-center justify-between pt-2">
+                        <div className="flex items-center gap-2">
+                          <button
+                            className="px-2 py-1 text-sm bg-transparent border border-border rounded"
+                            onClick={() => setPage((p) => Math.max(1, p - 1))}
+                            disabled={page === 1}
+                          >
+                            Prev
+                          </button>
+                          <div className="text-sm text-muted-foreground">Page {page} / {totalPages}</div>
+                          <button
+                            className="px-2 py-1 text-sm bg-transparent border border-border rounded"
+                            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                            disabled={page === totalPages}
+                          >
+                            Next
+                          </button>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <label className="text-xs text-muted-foreground">Per page:</label>
+                          <select value={pageSize} onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1) }} className="text-sm bg-transparent border border-border rounded px-2 py-1">
+                            <option value={5}>5</option>
+                            <option value={10}>10</option>
+                            <option value={20}>20</option>
+                          </select>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )
+              })()}
             </div>
           </div>
         )}

@@ -1,67 +1,80 @@
-"use client"
+"use client";
 
-import { DashboardHeader } from "@/components/dashboard-header"
-import { MetricsOverview } from "@/components/metrics-overview"
-import { PlatformCharts } from "@/components/platform-charts"
-import { SentimentAnalysis } from "@/components/sentiment-analysis"
-import { RecentComments } from "@/components/recent-comments"
-import { SearchQuery } from "@/components/search-query"
-import { NarrativeDetection } from "@/components/narrative-detection"
-import { AccountRiskAnalysis } from "@/components/account-risk-analysis"
-import { CrawlingLog } from "@/components/crawling-log"
-import { RecentVideos } from "@/components/recent-videos"
-import { ProComments } from "@/components/pro-comments"
-import { ContraComments } from "@/components/contra-comments"
-import { IntelligenceAnalysis } from "@/components/intelligence-analysis"
-import { useState, useEffect, useRef } from "react"
-import { useTikTokComments } from "@/hooks/use-tiktok-comments"
+import { DashboardHeader } from "@/components/dashboard-header";
+import { MetricsOverview } from "@/components/metrics-overview";
+import { PlatformCharts } from "@/components/platform-charts";
+import { SentimentAnalysis } from "@/components/sentiment-analysis";
+import { RecentComments } from "@/components/recent-comments";
+import { SearchQuery } from "@/components/search-query";
+import { NarrativeDetection } from "@/components/narrative-detection";
+import { AccountRiskAnalysis } from "@/components/account-risk-analysis";
+import { CrawlingLog } from "@/components/crawling-log";
+import { RecentVideos } from "@/components/recent-videos";
+import { ProComments } from "@/components/pro-comments";
+import { ContraComments } from "@/components/contra-comments";
+import { IntelligenceAnalysis } from "@/components/intelligence-analysis";
+import { useState, useEffect, useRef } from "react";
+import { useTikTokComments } from "@/hooks/use-tiktok-comments";
 
 export default function Page() {
-  const [query, setQuery] = useState<string>("")
-  const [queryType, setQueryType] = useState<"username" | "video" | "keyword">("username")
-  const [latestOnly, setLatestOnly] = useState(false)
-  const [isAnalyzing, setIsAnalyzing] = useState(false)
-  const [additionalComments, setAdditionalComments] = useState<any[]>([])
-  const [cursor, setCursor] = useState<number | null>(null)
-  const [isLoadingMore, setIsLoadingMore] = useState(false)
-  const [hasMore, setHasMore] = useState(true)
-  const hasLoadedMore = useRef(false)
+  const [query, setQuery] = useState<string>("");
+  const [queryType, setQueryType] = useState<"username" | "video" | "keyword">(
+    "username"
+  );
+  const [latestOnly, setLatestOnly] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [additionalComments, setAdditionalComments] = useState<any[]>([]);
+  const [cursor, setCursor] = useState<number | null>(null);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const hasLoadedMore = useRef(false);
   const [crawlingLogs, setCrawlingLogs] = useState<
     Array<{
-      timestamp: string
-      type: "info" | "success" | "error" | "warning"
-      message: string
+      timestamp: string;
+      type: "info" | "success" | "error" | "warning";
+      message: string;
     }>
-  >([])
+  >([]);
 
-  const apiData = useTikTokComments(query, queryType, !hasLoadedMore.current, latestOnly)
+  const apiData = useTikTokComments(
+    query,
+    queryType,
+    !hasLoadedMore.current,
+    latestOnly
+  );
 
   useEffect(() => {
     if (apiData.cursor !== undefined && apiData.cursor !== null) {
-      console.log("[v0] Setting initial cursor from API:", apiData.cursor)
-      setCursor(apiData.cursor)
-      setHasMore(apiData.hasMore)
+      console.log("[v0] Setting initial cursor from API:", apiData.cursor);
+      setCursor(apiData.cursor);
+      setHasMore(apiData.hasMore);
     }
-  }, [apiData.cursor, apiData.hasMore])
+  }, [apiData.cursor, apiData.hasMore]);
 
-  const handleSearch = (newQuery: string, type: "username" | "video" | "keyword", latest = false) => {
-    setIsAnalyzing(true)
-    setQuery(newQuery)
-    setQueryType(type)
-    setLatestOnly(latest)
-    setAdditionalComments([])
-    setCursor(null)
-    setHasMore(true)
-    hasLoadedMore.current = false
+  const handleSearch = (
+    newQuery: string,
+    type: "username" | "video" | "keyword",
+    latest = false
+  ) => {
+    setIsAnalyzing(true);
+    setQuery(newQuery);
+    setQueryType(type);
+    setLatestOnly(latest);
+    setAdditionalComments([]);
+    setCursor(null);
+    setHasMore(true);
+    hasLoadedMore.current = false;
     setCrawlingLogs([
       {
         timestamp: new Date().toLocaleTimeString(),
         type: "info",
-        message: `Starting analysis for ${type}: ${newQuery}${latest ? " (latest video only)" : ""}`,
+        message: `Starting analysis for ${type}: ${newQuery}${
+          latest ? " (latest video only)" : ""
+        }`,
       },
-    ])
-    setTimeout(() => setIsAnalyzing(false), 2000)
-  }
+    ]);
+    setTimeout(() => setIsAnalyzing(false), 2000);
+  };
 
   useEffect(() => {
     if (apiData.isLoading) {
@@ -72,7 +85,7 @@ export default function Page() {
           type: "info",
           message: "Fetching data from TikTok API...",
         },
-      ])
+      ]);
     } else if (apiData.error) {
       setCrawlingLogs((prev) => [
         ...prev,
@@ -81,26 +94,33 @@ export default function Page() {
           type: "error",
           message: `Error: ${apiData.error}`,
         },
-      ])
+      ]);
     } else if (apiData.totalComments > 0) {
       setCrawlingLogs((prev) => [
         ...prev,
         {
           timestamp: new Date().toLocaleTimeString(),
           type: "success",
-          message: `Successfully fetched ${apiData.totalComments} comments from ${apiData.videosAnalyzed || 1} video(s)`,
+          message: `Successfully fetched ${
+            apiData.totalComments
+          } comments from ${apiData.videosAnalyzed || 1} video(s)`,
         },
-      ])
+      ]);
     }
-  }, [apiData.isLoading, apiData.error, apiData.totalComments, apiData.videosAnalyzed])
+  }, [
+    apiData.isLoading,
+    apiData.error,
+    apiData.totalComments,
+    apiData.videosAnalyzed,
+  ]);
 
   const handleLoadMore = async () => {
-    if (!apiData.videoUrl || isLoadingMore || !hasMore) return
+    if (!apiData.videoUrl || isLoadingMore || !hasMore) return;
 
-    console.log("[v0] Loading more with cursor:", cursor)
+    console.log("[v0] Loading more with cursor:", cursor);
 
-    setIsLoadingMore(true)
-    hasLoadedMore.current = true
+    setIsLoadingMore(true);
+    hasLoadedMore.current = true;
 
     try {
       const response = await fetch("/api/load-more-comments", {
@@ -112,43 +132,51 @@ export default function Page() {
           videoUrl: apiData.videoUrl,
           cursor: cursor,
         }),
-      })
+      });
 
-      const result = await response.json()
+      const result = await response.json();
 
       if (result.success) {
-        console.log("[v0] Loaded", result.data.comments.length, "more comments")
-        console.log("[v0] Next cursor:", result.data.cursor)
+        console.log(
+          "[v0] Loaded",
+          result.data.comments.length,
+          "more comments"
+        );
+        console.log("[v0] Next cursor:", result.data.cursor);
 
-        setAdditionalComments((prev) => [...prev, ...result.data.comments])
-        setCursor(result.data.cursor)
-        setHasMore(result.data.hasMore)
+        setAdditionalComments((prev) => [...prev, ...result.data.comments]);
+        setCursor(result.data.cursor);
+        setHasMore(result.data.hasMore);
       } else {
-        console.error("[v0] Failed to load more comments:", result.error)
-        setHasMore(false)
+        console.error("[v0] Failed to load more comments:", result.error);
+        setHasMore(false);
       }
     } catch (error) {
-      console.error("[v0] Error loading more comments:", error)
-      setHasMore(false)
+      console.error("[v0] Error loading more comments:", error);
+      setHasMore(false);
     } finally {
-      setIsLoadingMore(false)
+      setIsLoadingMore(false);
     }
-  }
+  };
 
-  const allComments = [...apiData.comments, ...additionalComments]
+  const allComments = [...apiData.comments, ...additionalComments];
 
-  const totalComments = apiData.totalComments + additionalComments.length
-  const realComments = apiData.realComments + additionalComments.filter((c) => !c.isBot).length
-  const botComments = totalComments - realComments
-  const uniqueUsers = new Set([...apiData.comments, ...additionalComments].map((c) => c.user?.unique_id || c.user?.id))
-    .size
+  const totalComments = apiData.totalComments + additionalComments.length;
+  const realComments =
+    apiData.realComments + additionalComments.filter((c) => !c.isBot).length;
+  const botComments = totalComments - realComments;
+  const uniqueUsers = new Set(
+    [...apiData.comments, ...additionalComments].map(
+      (c) => c.user?.unique_id || c.user?.id
+    )
+  ).size;
 
-  const allCommentsData = [...apiData.comments, ...additionalComments]
+  const allCommentsData = [...apiData.comments, ...additionalComments];
   const sentimentCounts = {
     positive: allCommentsData.filter((c) => c.sentiment === "positive").length,
     negative: allCommentsData.filter((c) => c.sentiment === "negative").length,
     neutral: allCommentsData.filter((c) => c.sentiment === "neutral").length,
-  }
+  };
 
   const enhancedData = {
     ...apiData,
@@ -160,7 +188,8 @@ export default function Page() {
     sentimentCounts,
     queryType,
     videosAnalyzed: apiData.videosAnalyzed,
-  }
+    isLoading: Boolean(apiData.isLoading),
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -171,18 +200,24 @@ export default function Page() {
           currentQuery={query}
           queryType={queryType}
           isLoading={isAnalyzing}
-          latestOnly={latestOnly}
-          setLatestOnly={setLatestOnly}
         />
 
-        <CrawlingLog logs={crawlingLogs} isActive={isAnalyzing || apiData.isLoading} />
+        <CrawlingLog
+          logs={crawlingLogs}
+          isActive={isAnalyzing || !!apiData.isLoading}
+        />
 
         <MetricsOverview data={enhancedData} />
 
         <div className="grid gap-4 lg:grid-cols-3">
           <PlatformCharts data={enhancedData} />
           <SentimentAnalysis data={enhancedData} />
-          <RecentVideos data={{ videos: apiData.videos, isLoading: apiData.isLoading }} />
+          <RecentVideos
+            data={{
+              videos: apiData.videos,
+              isLoading: Boolean(apiData.isLoading),
+            }}
+          />
         </div>
 
         <IntelligenceAnalysis data={enhancedData} />
@@ -204,5 +239,5 @@ export default function Page() {
         />
       </main>
     </div>
-  )
+  );
 }
