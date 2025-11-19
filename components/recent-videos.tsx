@@ -2,6 +2,8 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Video, Heart, MessageCircle, Share2 } from "lucide-react";
+import { useState } from "react";
+import Pagination from "@/components/ui/pagination";
 
 interface RecentVideosProps {
   data: {
@@ -12,6 +14,8 @@ interface RecentVideosProps {
 
 export function RecentVideos({ data }: RecentVideosProps) {
   const { videos = [], isLoading } = data;
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   if (isLoading) {
     return (
@@ -23,7 +27,7 @@ export function RecentVideos({ data }: RecentVideosProps) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-center py-4 text-sm text-muted-foreground">
+          <div className="h-[200px] flex items-center justify-center text-muted-foreground">
             Loading videos...
           </div>
         </CardContent>
@@ -35,8 +39,11 @@ export function RecentVideos({ data }: RecentVideosProps) {
     return null;
   }
 
-  // const displayVideos = videos.slice(0, 10);
-  const displayVideos = videos;
+  const total = videos.length;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const startIndex = (page - 1) * pageSize;
+  const endIndex = Math.min(startIndex + pageSize, total);
+  const displayVideos = videos.slice(startIndex, endIndex);
 
   function getThumbnail(video: any): string {
     if (!video) return "/placeholder.svg";
@@ -74,7 +81,7 @@ export function RecentVideos({ data }: RecentVideosProps) {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid md:grid-cols-2 gap-2 overflow-y-auto">
+        <div className="grid md:grid-cols-2 gap-2 overflow-y-auto max-h-96">
           {displayVideos.map((video, idx) => {
             const stats = video.stats || video.statistics || {};
             const author = video.author || {};
@@ -92,17 +99,17 @@ export function RecentVideos({ data }: RecentVideosProps) {
                 className="group flex flex-col gap-2 p-3 rounded-lg bg-muted/30 border border-border hover:bg-muted/50 hover:border-primary/50 transition-all"
               >
                 <div className="aspect-9/16 rounded-md bg-muted overflow-hidden relative">
-                  {video.video?.cover ? (
-                    <img
-                      src={thumbnail}
-                      alt="Video thumbnail"
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                    />
+                  <img
+                    src={thumbnail}
+                    alt="Video thumbnail"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                  />
+                  {/* {video.video?.cover ? (
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
                       <Video className="w-8 h-8 text-muted-foreground" />
                     </div>
-                  )}
+                  )} */}
                   <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-1.5 py-0.5 rounded">
                     {video.video?.duration || "0:00"}
                   </div>
@@ -131,6 +138,21 @@ export function RecentVideos({ data }: RecentVideosProps) {
             );
           })}
         </div>
+        {total > 0 && (
+          <div className="pt-3">
+            <Pagination
+              page={page}
+              onPageChange={(p: number) => setPage(p)}
+              totalItems={total}
+              pageSize={pageSize}
+              onPageSizeChange={(s: number) => {
+                setPageSize(s);
+                setPage(1);
+              }}
+              pageSizeOptions={[5, 10, 25, 50]}
+            />
+          </div>
+        )}
       </CardContent>
     </Card>
   );

@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useState, useMemo } from "react";
+import Pagination from "@/components/ui/pagination";
 import { ThumbsUp, User, Sparkles, RefreshCw, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
@@ -248,46 +249,19 @@ export function ProComments({ data }: ProCommentsProps) {
                       ))}
                     </div>
 
-                    {(displayData.proComments?.length || 0) > pageSize && (
-                      <div className="flex items-center justify-between pt-2">
-                        <div className="flex items-center gap-2">
-                          <button
-                            className="px-2 py-1 text-sm bg-transparent border border-border rounded"
-                            onClick={() => setPage((p) => Math.max(1, p - 1))}
-                            disabled={page === 1}
-                          >
-                            Prev
-                          </button>
-                          <div className="text-sm text-muted-foreground">
-                            Page {page} / {totalPages}
-                          </div>
-                          <button
-                            className="px-2 py-1 text-sm bg-transparent border border-border rounded"
-                            onClick={() =>
-                              setPage((p) => Math.min(totalPages, p + 1))
-                            }
-                            disabled={page === totalPages}
-                          >
-                            Next
-                          </button>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <label className="text-xs text-muted-foreground">
-                            Per page:
-                          </label>
-                          <select
-                            value={pageSize}
-                            onChange={(e) => {
-                              setPageSize(Number(e.target.value));
-                              setPage(1);
-                            }}
-                            className="text-sm bg-transparent border border-border rounded px-2 py-1"
-                          >
-                            <option value={5}>5</option>
-                            <option value={10}>10</option>
-                            <option value={20}>20</option>
-                          </select>
-                        </div>
+                    {total > 0 && (
+                      <div className="pt-2">
+                        <Pagination
+                          page={page}
+                          onPageChange={(p: number) => setPage(p)}
+                          totalItems={total}
+                          pageSize={pageSize}
+                          onPageSizeChange={(s: number) => {
+                            setPageSize(s);
+                            setPage(1);
+                          }}
+                          pageSizeOptions={[5, 10, 20]}
+                        />
                       </div>
                     )}
                   </>

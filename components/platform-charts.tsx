@@ -91,7 +91,7 @@ export function PlatformCharts({ data }: PlatformChartsProps) {
       </CardHeader>
       <CardContent>
         {isLoading ? (
-          <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+          <div className="h-[200px] flex items-center justify-center text-muted-foreground">
             Loading chart data...
           </div>
         ) : (

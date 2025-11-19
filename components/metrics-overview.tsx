@@ -1,5 +1,7 @@
 "use client";
 
+import React, { ForwardRefExoticComponent, RefAttributes } from "react";
+import { LucideProps } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   ArrowDown,
@@ -34,6 +36,18 @@ interface MetricsOverviewProps {
   };
 }
 
+type Trend = "up" | "down" | "neutral";
+
+interface Metric {
+  title: string;
+  value: string;
+  change: string;
+  trend: Trend;
+  icon: ForwardRefExoticComponent<Omit<LucideProps, "ref">> &
+    RefAttributes<SVGSVGElement>;
+  hideChange?: boolean;
+}
+
 export function MetricsOverview({ data }: MetricsOverviewProps) {
   const {
     totalComments,
@@ -58,7 +72,7 @@ export function MetricsOverview({ data }: MetricsOverviewProps) {
     });
   };
 
-  const baseMetrics = [
+  const baseMetrics: Metric[] = [
     {
       title: "Total Comments",
       value: isLoading ? "..." : totalComments.toLocaleString(),

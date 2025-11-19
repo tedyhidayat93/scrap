@@ -122,7 +122,7 @@ export function SentimentAnalysis({ data }: SentimentAnalysisProps) {
       const text = comment.text?.toLowerCase() || "";
       const words = text.match(/\b[a-z]{3,}\b/g) || [];
 
-      words.forEach((word) => {
+      words.forEach((word: any) => {
         if (!STOPWORDS.has(word)) {
           wordFreq.set(word, (wordFreq.get(word) || 0) + 1);
         }

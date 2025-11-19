@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { AlertTriangle, Shield, AlertCircle, TrendingUp } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import Pagination from "@/components/ui/pagination";
 
 interface AccountRiskAnalysisProps {
   data: {
@@ -269,43 +270,18 @@ export function AccountRiskAnalysis({ data }: AccountRiskAnalysisProps) {
             </div>
 
             <div className="flex items-center justify-between gap-4 mt-3">
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={page === 1}
-                >
-                  Prev
-                </Button>
-                <div className="text-sm text-muted-foreground">
-                  Page {page} / {totalPages}
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={page === totalPages}
-                >
-                  Next
-                </Button>
-              </div>
-              <div className="flex items-center gap-2">
-                <label className="text-xs text-muted-foreground">
-                  Per page:
-                </label>
-                <select
-                  value={pageSize}
-                  onChange={(e) => {
-                    setPageSize(Number(e.target.value));
+              <div className="flex-1">
+                <Pagination
+                  page={page}
+                  onPageChange={(p: number) => setPage(p)}
+                  totalItems={totalAccounts}
+                  pageSize={pageSize}
+                  onPageSizeChange={(s: number) => {
+                    setPageSize(s);
                     setPage(1);
                   }}
-                  className="text-sm bg-transparent border border-border rounded px-2 py-1"
-                >
-                  <option value={5}>5</option>
-                  <option value={10}>10</option>
-                  <option value={20}>20</option>
-                </select>
+                  pageSizeOptions={[5, 10, 20]}
+                />
               </div>
               <div className="text-xs text-muted-foreground">
                 Total accounts: {accountRisks.length}
