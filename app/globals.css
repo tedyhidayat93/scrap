@@ -79,6 +79,12 @@
   --sidebar-ring: oklch(0.65 0.15 220);
 }
 
+@utility layer {
+  .bg-card {
+    @apply pt-5;
+  }
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -127,13 +133,21 @@
   body {
     @apply bg-background text-foreground;
     /* Adding monospace font option and subtle scan lines for cybersecurity aesthetic */
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
+      sans-serif;
   }
 
   /* Subtle tech grid pattern for cybersecurity theme */
   .cyber-grid {
-    background-image: linear-gradient(color-mix(in oklch, var(--color-primary), transparent 95%) 1px, transparent 1px),
-      linear-gradient(90deg, color-mix(in oklch, var(--color-primary), transparent 95%) 1px, transparent 1px);
+    background-image: linear-gradient(
+        color-mix(in oklch, var(--color-primary), transparent 95%) 1px,
+        transparent 1px
+      ),
+      linear-gradient(
+        90deg,
+        color-mix(in oklch, var(--color-primary), transparent 95%) 1px,
+        transparent 1px
+      );
     background-size: 50px 50px;
     background-position: -1px -1px;
   }
@@ -148,26 +162,34 @@
 
   /* Subtle glow for status indicators and alerts */
   .status-glow-blue {
-    box-shadow: 0 0 8px color-mix(in oklch, var(--color-primary), transparent 70%), 0 0 2px var(--color-primary);
+    box-shadow: 0 0 8px
+        color-mix(in oklch, var(--color-primary), transparent 70%),
+      0 0 2px var(--color-primary);
   }
 
   .status-glow-red {
-    box-shadow: 0 0 8px color-mix(in oklch, var(--color-destructive), transparent 70%), 0 0 2px var(--color-destructive);
+    box-shadow: 0 0 8px
+        color-mix(in oklch, var(--color-destructive), transparent 70%),
+      0 0 2px var(--color-destructive);
   }
 
   .status-glow-green {
-    box-shadow: 0 0 8px color-mix(in oklch, var(--color-success), transparent 70%), 0 0 2px var(--color-success);
+    box-shadow: 0 0 8px
+        color-mix(in oklch, var(--color-success), transparent 70%),
+      0 0 2px var(--color-success);
   }
 
   /* Monospace text for technical data displays */
   .text-mono {
-    font-family: "SF Mono", "Monaco", "Inconsolata", "Roboto Mono", "Courier New", monospace;
+    font-family: "SF Mono", "Monaco", "Inconsolata", "Roboto Mono",
+      "Courier New", monospace;
     font-variant-numeric: tabular-nums;
   }
 
   /* Terminal-style text effect */
   .text-terminal {
-    font-family: "SF Mono", "Monaco", "Inconsolata", "Roboto Mono", "Courier New", monospace;
+    font-family: "SF Mono", "Monaco", "Inconsolata", "Roboto Mono",
+      "Courier New", monospace;
     font-variant-numeric: tabular-nums;
     letter-spacing: 0.02em;
     color: var(--color-primary);

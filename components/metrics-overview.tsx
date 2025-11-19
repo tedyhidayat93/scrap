@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import { Card, CardContent } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card";
 import {
   ArrowDown,
   ArrowUp,
@@ -13,38 +13,50 @@ import {
   Share2,
   Bookmark,
   Calendar,
-} from "lucide-react"
+} from "lucide-react";
 
 interface MetricsOverviewProps {
   data: {
-    totalComments: number
-    realComments: number
-    botComments: number
-    uniqueUsers: number
-    isLoading: boolean
+    totalComments: number;
+    realComments: number;
+    botComments: number;
+    uniqueUsers: number;
+    isLoading: boolean;
     videoStats?: {
-      likes: number
-      shares: number
-      saves: number
-      views: number
-      createdAt: number | null
-    } | null
-    queryType?: string
-    videosAnalyzed?: number
-  }
+      likes: number;
+      shares: number;
+      saves: number;
+      views: number;
+      createdAt: number | null;
+    } | null;
+    queryType?: string;
+    videosAnalyzed?: number;
+  };
 }
 
 export function MetricsOverview({ data }: MetricsOverviewProps) {
-  const { totalComments, realComments, botComments, uniqueUsers, isLoading, videoStats, queryType, videosAnalyzed } =
-    data
+  const {
+    totalComments,
+    realComments,
+    botComments,
+    uniqueUsers,
+    isLoading,
+    videoStats,
+    queryType,
+    videosAnalyzed,
+  } = data;
 
-  const realAccounts = uniqueUsers
+  const realAccounts = uniqueUsers;
 
   const formatDate = (timestamp: number | null) => {
-    if (!timestamp) return "N/A"
-    const date = new Date(timestamp * 1000)
-    return date.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })
-  }
+    if (!timestamp) return "N/A";
+    const date = new Date(timestamp * 1000);
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  };
 
   const baseMetrics = [
     {
@@ -82,7 +94,7 @@ export function MetricsOverview({ data }: MetricsOverviewProps) {
       trend: "up",
       icon: UserCheck,
     },
-  ]
+  ];
 
   const keywordMetrics =
     queryType === "keyword"
@@ -96,7 +108,7 @@ export function MetricsOverview({ data }: MetricsOverviewProps) {
             hideChange: true,
           },
         ]
-      : []
+      : [];
 
   const videoMetrics =
     queryType === "video" && videoStats
@@ -131,17 +143,17 @@ export function MetricsOverview({ data }: MetricsOverviewProps) {
             hideChange: true,
           },
         ]
-      : []
+      : [];
 
-  const metrics = [...baseMetrics, ...keywordMetrics, ...videoMetrics]
+  const metrics = [...baseMetrics, ...keywordMetrics, ...videoMetrics];
 
   return (
     <div className="grid gap-3 grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
       {metrics.map((metric) => {
-        const Icon = metric.icon
-        const TrendIcon = metric.trend === "up" ? ArrowUp : ArrowDown
+        const Icon = metric.icon;
+        const TrendIcon = metric.trend === "up" ? ArrowUp : ArrowDown;
         return (
-          <Card key={metric.title} className="bg-card border-border">
+          <Card key={metric.title} className="bg-card pt-5 border-border">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -155,23 +167,29 @@ export function MetricsOverview({ data }: MetricsOverviewProps) {
                       metric.trend === "up"
                         ? "text-chart-4"
                         : metric.trend === "down"
-                          ? "text-chart-5"
-                          : "text-muted-foreground"
+                        ? "text-chart-5"
+                        : "text-muted-foreground"
                     }`}
                   >
-                    {metric.trend !== "neutral" && <TrendIcon className="h-3 w-3" />}
+                    {metric.trend !== "neutral" && (
+                      <TrendIcon className="h-3 w-3" />
+                    )}
                     {metric.change}
                   </div>
                 )}
               </div>
               <div className="mt-3">
-                <div className="text-xl font-semibold text-card-foreground">{metric.value}</div>
-                <p className="text-sm text-muted-foreground mt-1">{metric.title}</p>
+                <div className="text-xl font-semibold text-card-foreground">
+                  {metric.value}
+                </div>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {metric.title}
+                </p>
               </div>
             </CardContent>
           </Card>
-        )
+        );
       })}
     </div>
-  )
+  );
 }
