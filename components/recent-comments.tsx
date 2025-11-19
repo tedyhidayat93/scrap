@@ -57,7 +57,7 @@ export function RecentComments({
 
   if (isLoading) {
     return (
-      <Card className="bg-card pt-5 border-border">
+      <Card className="bg-card py-5 border-border">
         <CardHeader>
           <CardTitle className="text-lg font-semibold text-card-foreground">
             Recent Comments
@@ -73,7 +73,7 @@ export function RecentComments({
   }
 
   return (
-    <Card className="bg-card pt-5 border-border">
+    <Card className="bg-card py-5 border-border">
       <CardHeader>
         <CardTitle className="text-lg font-semibold text-card-foreground">
           Recent Comments ({comments.length})

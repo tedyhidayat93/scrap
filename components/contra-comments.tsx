@@ -96,7 +96,7 @@ export function ContraComments({ data }: ContraCommentsProps) {
     : "0";
 
   return (
-    <Card className="bg-card pt-5 border-border">
+    <Card className="bg-card py-5 border-border">
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>

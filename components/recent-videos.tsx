@@ -15,7 +15,7 @@ export function RecentVideos({ data }: RecentVideosProps) {
 
   if (isLoading) {
     return (
-      <Card className="bg-card pt-5 border-border">
+      <Card className="bg-card py-5 border-border">
         <CardHeader className="pb-3">
           <CardTitle className="text-base font-semibold text-card-foreground flex items-center gap-2">
             <Video className="w-4 h-4" />
@@ -38,7 +38,7 @@ export function RecentVideos({ data }: RecentVideosProps) {
   const displayVideos = videos.slice(0, 10);
 
   return (
-    <Card className="bg-card pt-5 border-border">
+    <Card className="bg-card py-5 border-border">
       <CardHeader className="pb-3">
         <CardTitle className="text-base font-semibold text-card-foreground flex items-center gap-2">
           <Video className="w-4 h-4" />
@@ -46,7 +46,7 @@ export function RecentVideos({ data }: RecentVideosProps) {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+        <div className="grid gap-3 overflow-y-auto">
           {displayVideos.map((video, idx) => {
             const stats = video.stats || video.statistics || {};
             const author = video.author || {};

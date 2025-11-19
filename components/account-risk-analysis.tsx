@@ -34,7 +34,7 @@ export function AccountRiskAnalysis({ data }: AccountRiskAnalysisProps) {
 
   if (isLoading) {
     return (
-      <Card className="bg-card pt-5 border-border">
+      <Card className="bg-card py-5 border-border">
         <CardHeader className="pb-3">
           <CardTitle className="text-base font-semibold text-card-foreground">
             Account Risk Analysis
@@ -172,7 +172,7 @@ export function AccountRiskAnalysis({ data }: AccountRiskAnalysisProps) {
   const pageRisks = accountRisks.slice(startIndex, endIndex);
 
   return (
-    <Card className="bg-card pt-5 border-border">
+    <Card className="bg-card py-5 border-border">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="text-base font-semibold text-card-foreground">
