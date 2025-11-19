@@ -66,8 +66,8 @@ export function RecentVideos({ data }: RecentVideosProps) {
                   {video.video?.cover ? (
                     <img
                       src={
-                        video.video.cover.url_list[0] ||
-                        video.video.cover ||
+                        video.video.cover.url_list[0] ??
+                        video.video.cover ??
                         "/placeholder.svg"
                       }
                       alt="Video thumbnail"
