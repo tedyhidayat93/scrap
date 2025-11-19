@@ -7,7 +7,13 @@ import {
 
 import { cn } from "@/lib/utils";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 function Pagination({ className, ...props }: React.ComponentProps<"nav">) {
   return (
@@ -128,14 +134,14 @@ export {
 };
 
 type DefaultPaginationProps = {
-  page: number
-  onPageChange: (p: number) => void
-  totalItems: number
-  pageSize: number
-  onPageSizeChange?: (size: number) => void
-  pageSizeOptions?: number[]
-  maxButtons?: number
-}
+  page: number;
+  onPageChange: (p: number) => void;
+  totalItems: number;
+  pageSize: number;
+  onPageSizeChange?: (size: number) => void;
+  pageSizeOptions?: number[];
+  maxButtons?: number;
+};
 
 // Default wrapper to provide a simple numbered pagination API on top of the shadcn primitives
 export default function DefaultPagination({
@@ -147,59 +153,75 @@ export default function DefaultPagination({
   pageSizeOptions = [5, 10, 20],
   maxButtons = 7,
 }: DefaultPaginationProps) {
-  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize))
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
 
-  if (totalPages === 1 && !onPageSizeChange) return null
+  if (totalPages === 1 && !onPageSizeChange) return null;
 
   const makeRange = (s: number, e: number) => {
-    const out: number[] = []
-    for (let i = s; i <= e; i++) out.push(i)
-    return out
-  }
+    const out: number[] = [];
+    for (let i = s; i <= e; i++) out.push(i);
+    return out;
+  };
 
-  let start = 1
-  let end = totalPages
+  let start = 1;
+  let end = totalPages;
   if (totalPages > maxButtons) {
-    const half = Math.floor(maxButtons / 2)
-    start = Math.max(1, page - half)
-    end = Math.min(totalPages, start + maxButtons - 1)
-    if (end - start + 1 < maxButtons) start = Math.max(1, end - maxButtons + 1)
+    const half = Math.floor(maxButtons / 2);
+    start = Math.max(1, page - half);
+    end = Math.min(totalPages, start + maxButtons - 1);
+    if (end - start + 1 < maxButtons) start = Math.max(1, end - maxButtons + 1);
   }
 
-  const pages = makeRange(start, end)
+  const pages = makeRange(start, end);
 
   return (
     <Pagination className="w-full">
       <PaginationPrevious
-        onClick={() => { if (page > 1) onPageChange(Math.max(1, page - 1)) }}
+        onClick={() => {
+          if (page > 1) onPageChange(Math.max(1, page - 1));
+        }}
         aria-disabled={page === 1}
       />
       <PaginationContent>
         {pages.map((p) => (
           <PaginationItem key={p}>
-            <PaginationLink isActive={p === page} onClick={() => onPageChange(p)}>
+            <PaginationLink
+              isActive={p === page}
+              onClick={() => onPageChange(p)}
+            >
               {p}
             </PaginationLink>
           </PaginationItem>
         ))}
       </PaginationContent>
       <PaginationNext
-        onClick={() => { if (page < totalPages) onPageChange(Math.min(totalPages, page + 1)) }}
+        onClick={() => {
+          if (page < totalPages) onPageChange(Math.min(totalPages, page + 1));
+        }}
         aria-disabled={page === totalPages}
       />
 
       <div className="ml-4 flex items-center gap-2">
-        <div className="text-sm text-muted-foreground">{page} / {totalPages}</div>
+        <div className="text-sm text-muted-foreground">
+          {page} / {totalPages}
+        </div>
         {onPageSizeChange && (
           <div className="flex items-center gap-2">
             <span className="text-xs text-muted-foreground">Per page:</span>
-            <Select value={String(pageSize)} onValueChange={(v) => { onPageSizeChange(Number(v)) }}>
+            <Select
+              value={String(pageSize)}
+              onValueChange={(v) => {
+                onPageSizeChange(Number(v));
+              }}
+            >
               <SelectTrigger className="w-20 h-8">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 {pageSizeOptions.map((opt) => (
-                  <SelectItem key={opt} value={String(opt)}>{opt}</SelectItem>
+                  <SelectItem key={opt} value={String(opt)}>
+                    {opt}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -207,5 +229,5 @@ export default function DefaultPagination({
         )}
       </div>
     </Pagination>
-  )
+  );
 }

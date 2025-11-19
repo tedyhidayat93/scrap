@@ -60,13 +60,14 @@ export function AccountRiskAnalysis({ data }: AccountRiskAnalysisProps) {
 
   const accountRisks: AccountRisk[] = Array.from(accountMap.entries())
     .map(([userId, userComments]) => {
+      const first =
+        Array.isArray(userComments) && userComments.length > 0
+          ? userComments[0]
+          : null;
       const username =
-        userComments[0]?.user?.unique_id ||
-        userComments[0]?.user?.nickname ||
-        "Unknown User";
+        first?.user?.unique_id || first?.user?.nickname || "Unknown User";
       const avatar =
-        userComments[0]?.user?.avatar_thumb?.url_list?.[0] ||
-        "/placeholder.svg";
+        first?.user?.avatar_thumb?.url_list?.[0] || "/placeholder.svg";
 
       // Calculate risk factors
       const commentCount = userComments.length;
