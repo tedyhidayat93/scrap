@@ -102,6 +102,8 @@ export function NarrativeDetection({ data }: NarrativeDetectionProps) {
   const [aiNarratives, setAiNarratives] = useState<any>(null)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(5)
 
   const analyzeWithAI = async () => {
     setIsAnalyzing(true)
@@ -217,39 +219,82 @@ export function NarrativeDetection({ data }: NarrativeDetectionProps) {
                   Secondary Discussion Themes
                 </h4>
                 <div className="space-y-3">
-                  {aiNarratives.secondaryNarratives.map((narrative: any, index: number) => (
-                    <div key={index} className="p-3 rounded-lg bg-muted/30 border border-border/50">
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="text-sm font-medium text-card-foreground">{narrative.topic}</span>
-                            <Badge
-                              variant="outline"
-                              className={
-                                narrative.sentiment === "positive"
-                                  ? "bg-chart-4/10 text-chart-4 border-chart-4/20"
-                                  : narrative.sentiment === "negative"
-                                    ? "bg-chart-5/10 text-chart-5 border-chart-5/20"
-                                    : "bg-chart-3/10 text-chart-3 border-chart-3/20"
-                              }
-                            >
-                              {narrative.sentiment}
-                            </Badge>
+                  {(() => {
+                    const list = aiNarratives.secondaryNarratives || []
+                    const total = list.length
+                    const totalPages = Math.max(1, Math.ceil(total / pageSize))
+                    const start = (page - 1) * pageSize
+                    const end = Math.min(start + pageSize, total)
+                    const pageList = list.slice(start, end)
+
+                    return (
+                      <>
+                        {pageList.map((narrative: any, index: number) => (
+                          <div key={start + index} className="p-3 rounded-lg bg-muted/30 border border-border/50">
+                            <div className="flex items-start justify-between mb-2">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <span className="text-sm font-medium text-card-foreground">{narrative.topic}</span>
+                                  <Badge
+                                    variant="outline"
+                                    className={
+                                      narrative.sentiment === "positive"
+                                        ? "bg-chart-4/10 text-chart-4 border-chart-4/20"
+                                        : narrative.sentiment === "negative"
+                                          ? "bg-chart-5/10 text-chart-5 border-chart-5/20"
+                                          : "bg-chart-3/10 text-chart-3 border-chart-3/20"
+                                    }
+                                  >
+                                    {narrative.sentiment}
+                                  </Badge>
+                                </div>
+                                <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                                  <span>~{narrative.percentage}% of comments</span>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex flex-wrap gap-1.5 mt-2">
+                              {narrative.keywords.map((keyword: string) => (
+                                <Badge key={keyword} variant="secondary" className="text-xs">
+                                  {keyword}
+                                </Badge>
+                              ))}
+                            </div>
                           </div>
-                          <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                            <span>~{narrative.percentage}% of comments</span>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex flex-wrap gap-1.5 mt-2">
-                        {narrative.keywords.map((keyword: string) => (
-                          <Badge key={keyword} variant="secondary" className="text-xs">
-                            {keyword}
-                          </Badge>
                         ))}
-                      </div>
-                    </div>
-                  ))}
+
+                        {total > pageSize && (
+                          <div className="flex items-center justify-between pt-2">
+                            <div className="flex items-center gap-2">
+                              <button
+                                className="px-2 py-1 text-sm bg-transparent border border-border rounded"
+                                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                                disabled={page === 1}
+                              >
+                                Prev
+                              </button>
+                              <div className="text-sm text-muted-foreground">Page {page} / {totalPages}</div>
+                              <button
+                                className="px-2 py-1 text-sm bg-transparent border border-border rounded"
+                                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                                disabled={page === totalPages}
+                              >
+                                Next
+                              </button>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <label className="text-xs text-muted-foreground">Per page:</label>
+                              <select value={pageSize} onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1) }} className="text-sm bg-transparent border border-border rounded px-2 py-1">
+                                <option value={3}>3</option>
+                                <option value={5}>5</option>
+                                <option value={10}>10</option>
+                              </select>
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    )
+                  })()}
                 </div>
               </div>
             )}

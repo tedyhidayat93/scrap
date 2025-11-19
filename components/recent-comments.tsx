@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
+import { useState } from "react"
 import { Loader2 } from "lucide-react"
 
 const sentimentColors = {
@@ -37,6 +38,14 @@ interface RecentCommentsProps {
 
 export function RecentComments({ data, onLoadMore, isLoadingMore, hasMore }: RecentCommentsProps) {
   const { comments, isLoading, handle } = data
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
+
+  const total = comments.length
+  const totalPages = Math.max(1, Math.ceil(total / pageSize))
+  const startIndex = (page - 1) * pageSize
+  const endIndex = Math.min(startIndex + pageSize, total)
+  const pageComments = comments.slice(startIndex, endIndex)
 
   if (isLoading) {
     return (
@@ -60,7 +69,7 @@ export function RecentComments({ data, onLoadMore, isLoadingMore, hasMore }: Rec
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {comments.slice(0, 50).map((comment: any, index: number) => {
+          {pageComments.map((comment: any, index: number) => {
             const commentText = comment.text || "No comment text"
             const userName = comment.user?.unique_id || comment.user?.nickname || `User ${index + 1}`
             const userAvatar = comment.user?.avatar_thumb?.url_list?.[0] || "/placeholder.svg"
@@ -118,6 +127,34 @@ export function RecentComments({ data, onLoadMore, isLoadingMore, hasMore }: Rec
               {handle ? "No comments found for this user" : "Enter a TikTok username to see comments"}
             </div>
           )}
+          {/* Pagination controls */}
+          {comments.length > 0 && (
+            <div className="flex items-center justify-between gap-4 pt-4">
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}>
+                  Prev
+                </Button>
+                <div className="text-sm text-muted-foreground">Page {page} / {totalPages}</div>
+                <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages}>
+                  Next
+                </Button>
+              </div>
+              <div className="flex items-center gap-2">
+                <label className="text-xs text-muted-foreground">Per page:</label>
+                <select
+                  value={pageSize}
+                  onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1) }}
+                  className="text-sm bg-transparent border border-border rounded px-2 py-1"
+                >
+                  <option value={5}>5</option>
+                  <option value={10}>10</option>
+                  <option value={25}>25</option>
+                  <option value={50}>50</option>
+                </select>
+              </div>
+            </div>
+          )}
+
           {hasMore && onLoadMore && comments.length > 0 && (
             <div className="flex justify-center pt-4">
               <Button
