@@ -29,7 +29,7 @@ function cleanUsername(input: string): string {
 
 async function fetchTikTokUserVideos(handle: string) {
   try {
-    const url = `${BASE_URL}/tiktok/profile/videos?handle=${handle}&amount=30`;
+    const url = `${BASE_URL}/tiktok/profile/videos?handle=${handle}&amount=100`;
     console.log("[v0] Fetching videos from:", url);
 
     const response = await fetch(url, {
@@ -76,10 +76,10 @@ async function fetchTikTokVideoComments(videoUrl: string, cursor?: number) {
     const url = cursor
       ? `${BASE_URL}/tiktok/video/comments?url=${encodeURIComponent(
           videoUrl
-        )}&count=130&cursor=${cursor}`
+        )}&count=100&limit=100&cursor=${cursor}`
       : `${BASE_URL}/tiktok/video/comments?url=${encodeURIComponent(
           videoUrl
-        )}&count=130`;
+        )}&count=100&limit=100`;
     console.log("[v0] Fetching comments from:", url);
 
     const response = await fetch(url, {

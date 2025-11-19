@@ -30,7 +30,7 @@ export function useTikTokComments(
     shouldFetch
       ? `/api/tiktok-user-comments?query=${encodeURIComponent(
           query
-        )}&type=${type}&max_comments=100&latestOnly=${latestOnly}`
+        )}&type=${type}&latestOnly=${latestOnly}`
       : null,
     fetcher,
     {
