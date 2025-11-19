@@ -122,31 +122,6 @@ async function fetchTikTokVideoComments(videoUrl: string, cursor?: number) {
   }
 }
 
-async function fetchAllComments(videoUrl: string, max = 100) {
-  let cursor: number | undefined = undefined;
-  let all: any[] = [];
-  let hasMore = true;
-
-  while (hasMore && all.length < max) {
-    const res = await fetchTikTokVideoComments(videoUrl, cursor);
-
-    if (res.error) break;
-
-    const comments = res.data?.comments || [];
-    all.push(...comments);
-
-    cursor = res.data?.cursor;
-    hasMore = res.data?.has_more && !!cursor;
-
-    // kalau tidak ada next cursor → stop
-    if (!cursor) break;
-
-    await new Promise((r) => setTimeout(r, 500));
-  }
-
-  return all.slice(0, max);
-}
-
 async function fetchTikTokVideoInfo(videoUrl: string) {
   try {
     const url = `${BASE_URL}/tiktok/video?url=${encodeURIComponent(videoUrl)}`;
@@ -616,8 +591,7 @@ export async function GET(request: Request) {
         );
       }
 
-      // const comments = commentsResult.data?.comments || [];
-      const comments = await fetchAllComments(videoUrl, 100);
+      const comments = commentsResult.data?.comments || [];
       const cursor = commentsResult.data?.cursor || null;
       const hasMore = commentsResult.data?.has_more || !!cursor;
 
@@ -726,40 +700,31 @@ export async function GET(request: Request) {
         const videoUrl = `https://www.tiktok.com/@${handle}/video/${videoId}`;
         console.log("[v0] Fetching comments for video:", videoUrl);
 
-        const comments = await fetchAllComments(videoUrl, 100);
-        allComments.push(
-          ...comments.map((c) => ({
-            ...c,
-            videoId,
-            videoUrl,
-            platform: "tiktok",
-          }))
-        );
+        const commentsResult = await fetchTikTokVideoComments(videoUrl);
 
-        // const commentsResult = await fetchTikTokVideoComments(videoUrl);
-        // if (!commentsResult.error && commentsResult.data?.comments) {
-        //   allComments.push(
-        //     ...commentsResult.data.comments.map((c: any) => ({
-        //       ...c,
-        //       platform: "tiktok",
-        //       videoId: videoId,
-        //       videoUrl: videoUrl,
-        //     }))
-        //   );
-        //   successfulVideos++;
-        //   console.log(
-        //     "[v0] Successfully fetched comments from video:",
-        //     videoUrl
-        //   );
-        // } else {
-        //   failedVideos++;
-        //   console.log(
-        //     "[v0] Failed to fetch comments from video:",
-        //     videoUrl,
-        //     "Error:",
-        //     commentsResult.error
-        //   );
-        // }
+        if (!commentsResult.error && commentsResult.data?.comments) {
+          allComments.push(
+            ...commentsResult.data.comments.map((c: any) => ({
+              ...c,
+              platform: "tiktok",
+              videoId: videoId,
+              videoUrl: videoUrl,
+            }))
+          );
+          successfulVideos++;
+          console.log(
+            "[v0] Successfully fetched comments from video:",
+            videoUrl
+          );
+        } else {
+          failedVideos++;
+          console.log(
+            "[v0] Failed to fetch comments from video:",
+            videoUrl,
+            "Error:",
+            commentsResult.error
+          );
+        }
       } catch (videoError) {
         failedVideos++;
         console.error(
