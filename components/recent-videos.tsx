@@ -35,7 +35,8 @@ export function RecentVideos({ data }: RecentVideosProps) {
     return null;
   }
 
-  const displayVideos = videos.slice(0, 10);
+  // const displayVideos = videos.slice(0, 10);
+  const displayVideos = videos;
 
   return (
     <Card className="bg-card py-5 border-border">
@@ -46,7 +47,7 @@ export function RecentVideos({ data }: RecentVideosProps) {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid gap-3 overflow-y-auto">
+        <div className="grid md:grid-cols-2 gap-2 overflow-y-auto">
           {displayVideos.map((video, idx) => {
             const stats = video.stats || video.statistics || {};
             const author = video.author || {};
@@ -64,7 +65,11 @@ export function RecentVideos({ data }: RecentVideosProps) {
                 <div className="aspect-9/16 rounded-md bg-muted overflow-hidden relative">
                   {video.video?.cover ? (
                     <img
-                      src={video.video.cover || "/placeholder.svg"}
+                      src={
+                        video.video.cover.url_list[0] ||
+                        video.video.cover ||
+                        "/placeholder.svg"
+                      }
                       alt="Video thumbnail"
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                     />

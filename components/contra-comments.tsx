@@ -13,6 +13,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import Pagination from "@/components/ui/pagination";
 
 interface ContraCommentsProps {
   data: {
@@ -27,6 +28,8 @@ export function ContraComments({ data }: ContraCommentsProps) {
   const [aiContraData, setAiContraData] = useState<any>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(5);
 
   const basicContraComments = useMemo(() => {
     if (comments.length === 0) return [];
@@ -182,65 +185,93 @@ export function ContraComments({ data }: ContraCommentsProps) {
               </div>
             </div>
 
-            <div className="space-y-3 max-h-[400px] overflow-y-auto">
-              {displayData.contraComments
-                .slice(0, 10)
-                .map((comment: any, index: number) => (
-                  <div
-                    key={comment.cid || index}
-                    className="p-4 rounded-lg bg-muted/30 border border-border/50"
-                  >
-                    <div className="flex items-start gap-3">
-                      <Avatar className="h-10 w-10">
-                        <AvatarImage
-                          src={
-                            comment.user?.avatar_thumb?.url_list?.[0] ||
-                            "/placeholder.svg"
-                          }
-                          alt={comment.user?.nickname}
-                        />
-                        <AvatarFallback>
-                          <User className="h-5 w-5" />
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="font-medium text-sm text-card-foreground truncate">
-                            {comment.user?.nickname || "Anonymous"}
-                          </span>
-                          <Badge
-                            variant="outline"
-                            className="bg-red-500/10 text-red-500 border-red-500/20 text-xs"
-                          >
-                            Contra {comment.contraScore}/10
-                          </Badge>
+            <div className="space-y-3">
+              {(() => {
+                const list = displayData.contraComments || [];
+                const total = list.length;
+                const start = (page - 1) * pageSize;
+                const end = Math.min(start + pageSize, total);
+                const pageList = list.slice(start, end);
+
+                return (
+                  <>
+                    <div className="space-y-3 max-h-[400px] overflow-y-auto">
+                      {pageList.map((comment: any, index: number) => (
+                        <div
+                          key={comment.cid || index}
+                          className="p-4 rounded-lg bg-muted/30 border border-border/50"
+                        >
+                          <div className="flex items-start gap-3">
+                            <Avatar className="h-10 w-10">
+                              <AvatarImage
+                                src={
+                                  comment.user?.avatar_thumb?.url_list?.[0] ||
+                                  "/placeholder.svg"
+                                }
+                                alt={comment.user?.nickname}
+                              />
+                              <AvatarFallback>
+                                <User className="h-5 w-5" />
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="font-medium text-sm text-card-foreground truncate">
+                                  {comment.user?.nickname || "Anonymous"}
+                                </span>
+                                <Badge
+                                  variant="outline"
+                                  className="bg-red-500/10 text-red-500 border-red-500/20 text-xs"
+                                >
+                                  Contra {comment.contraScore}/10
+                                </Badge>
+                              </div>
+                              <p className="text-sm text-card-foreground mb-2 leading-relaxed">
+                                {comment.text}
+                              </p>
+                              {comment.contraReason && (
+                                <p className="text-xs text-muted-foreground italic mb-2 p-2 bg-muted/50 rounded">
+                                  Why it's contra: {comment.contraReason}
+                                </p>
+                              )}
+                              <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                                <span className="flex items-center gap-1">
+                                  <ThumbsDown className="h-3 w-3" />
+                                  {comment.digg_count || 0} likes
+                                </span>
+                                {comment.create_time &&
+                                  !isNaN(comment.create_time) && (
+                                    <span>
+                                      {new Date(
+                                        comment.create_time * 1000
+                                      ).toLocaleDateString()}
+                                    </span>
+                                  )}
+                              </div>
+                            </div>
+                          </div>
                         </div>
-                        <p className="text-sm text-card-foreground mb-2 leading-relaxed">
-                          {comment.text}
-                        </p>
-                        {comment.contraReason && (
-                          <p className="text-xs text-muted-foreground italic mb-2 p-2 bg-muted/50 rounded">
-                            Why it's contra: {comment.contraReason}
-                          </p>
-                        )}
-                        <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                          <span className="flex items-center gap-1">
-                            <ThumbsDown className="h-3 w-3" />
-                            {comment.digg_count || 0} likes
-                          </span>
-                          {comment.create_time &&
-                            !isNaN(comment.create_time) && (
-                              <span>
-                                {new Date(
-                                  comment.create_time * 1000
-                                ).toLocaleDateString()}
-                              </span>
-                            )}
-                        </div>
-                      </div>
+                      ))}
                     </div>
-                  </div>
-                ))}
+
+                    {total > pageSize && (
+                      <div className="flex items-center justify-between pt-2">
+                        <Pagination
+                          page={page}
+                          onPageChange={(p) => setPage(p)}
+                          totalItems={total}
+                          pageSize={pageSize}
+                          onPageSizeChange={(s) => {
+                            setPageSize(s);
+                            setPage(1);
+                          }}
+                          pageSizeOptions={[5, 10, 20]}
+                        />
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
             </div>
           </div>
         )}

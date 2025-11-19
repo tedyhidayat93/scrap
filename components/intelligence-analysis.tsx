@@ -354,7 +354,7 @@ export function IntelligenceAnalysis({ data }: IntelligenceAnalysisProps) {
                           className="flex items-start gap-2 text-sm"
                         >
                           <div
-                            className={`mt-1 h-1.5 w-1.5 rounded-full flex-shrink-0 ${
+                            className={`mt-1 h-1.5 w-1.5 rounded-full shrink-0 ${
                               rec.priority === "high"
                                 ? "bg-red-500"
                                 : rec.priority === "medium"

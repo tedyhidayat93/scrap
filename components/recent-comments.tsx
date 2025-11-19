@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
+import Pagination from "@/components/ui/pagination";
 import { Loader2 } from "lucide-react";
 
 const sentimentColors = {
@@ -164,71 +165,43 @@ export function RecentComments({
                 : "Enter a TikTok username to see comments"}
             </div>
           )}
-          {/* Pagination controls */}
+          {/* Pagination controls (reusable) */}
           {comments.length > 0 && (
-            <div className="flex items-center justify-between gap-4 pt-4">
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={page === 1}
-                >
-                  Prev
-                </Button>
-                <div className="text-sm text-muted-foreground">
-                  Page {page} / {totalPages}
+            <div className="pt-4">
+              <Pagination
+                page={page}
+                onPageChange={(p) => setPage(p)}
+                totalItems={total}
+                pageSize={pageSize}
+                onPageSizeChange={(s) => {
+                  setPageSize(s);
+                  setPage(1);
+                }}
+                pageSizeOptions={[5, 10, 25, 50]}
+              />
+
+              {/* {hasMore && onLoadMore && (
+                <div className="flex justify-center pt-4">
+                  <Button
+                    onClick={onLoadMore}
+                    disabled={isLoadingMore}
+                    variant="outline"
+                    size="lg"
+                    className="w-full bg-transparent"
+                  >
+                    {isLoadingMore ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Loading More Comments...
+                      </>
+                    ) : (
+                      "Load More Comments"
+                    )}
+                  </Button>
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={page === totalPages}
-                >
-                  Next
-                </Button>
-              </div>
-              <div className="flex items-center gap-2">
-                <label className="text-xs text-muted-foreground">
-                  Per page:
-                </label>
-                <select
-                  value={pageSize}
-                  onChange={(e) => {
-                    setPageSize(Number(e.target.value));
-                    setPage(1);
-                  }}
-                  className="text-sm bg-transparent border border-border rounded px-2 py-1"
-                >
-                  <option value={5}>5</option>
-                  <option value={10}>10</option>
-                  <option value={25}>25</option>
-                  <option value={50}>50</option>
-                </select>
-              </div>
+              )} */}
             </div>
           )}
-
-          {/* {hasMore && onLoadMore && comments.length > 0 && (
-            <div className="flex justify-center pt-4">
-              <Button
-                onClick={onLoadMore}
-                disabled={isLoadingMore}
-                variant="outline"
-                size="lg"
-                className="w-full bg-transparent"
-              >
-                {isLoadingMore ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Loading More Comments...
-                  </>
-                ) : (
-                  "Load More Comments"
-                )}
-              </Button>
-            </div>
-          )} */}
         </div>
       </CardContent>
     </Card>
