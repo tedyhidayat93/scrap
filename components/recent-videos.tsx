@@ -38,6 +38,33 @@ export function RecentVideos({ data }: RecentVideosProps) {
   // const displayVideos = videos.slice(0, 10);
   const displayVideos = videos;
 
+  function getThumbnail(video: any): string {
+    if (!video) return "/placeholder.svg";
+
+    // kemungkinan struktur: video.video.cover.url_list (objek kompleks)
+    const coverObj = video?.video?.cover ?? video?.cover;
+
+    // 1) jika coverObj adalah object dengan url_list (array)
+    if (coverObj && typeof coverObj === "object") {
+      const urlList = coverObj.url_list ?? coverObj.urlList ?? coverObj.urls;
+      if (Array.isArray(urlList) && urlList.length > 0 && urlList[0]) {
+        return urlList[0];
+      }
+
+      // some providers store the url directly inside a "uri" or "url" property
+      if (coverObj.url) return coverObj.url;
+      if (coverObj.uri) return coverObj.uri;
+    }
+
+    // 2) jika coverObj adalah string langsung
+    if (typeof coverObj === "string" && coverObj.trim() !== "") {
+      return coverObj;
+    }
+
+    // fallback
+    return "/placeholder.svg";
+  }
+
   return (
     <Card className="bg-card py-5 border-border">
       <CardHeader className="pb-3">
@@ -54,6 +81,8 @@ export function RecentVideos({ data }: RecentVideosProps) {
             const videoId = video.aweme_id || video.id;
             const authorName = author.unique_id || author.nickname || "Unknown";
 
+            const thumbnail = getThumbnail(video);
+
             return (
               <a
                 key={videoId || idx}
@@ -65,11 +94,7 @@ export function RecentVideos({ data }: RecentVideosProps) {
                 <div className="aspect-9/16 rounded-md bg-muted overflow-hidden relative">
                   {video.video?.cover ? (
                     <img
-                      src={
-                        video.video.cover.url_list[0] ??
-                        video.video.cover ??
-                        "/placeholder.svg"
-                      }
+                      src={thumbnail}
                       alt="Video thumbnail"
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                     />
