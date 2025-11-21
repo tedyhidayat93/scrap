@@ -51,9 +51,10 @@ export async function POST(req: Request) {
 
     try {
       const { object } = await generateObject({
-        model: openai("gpt-4o-mini", {
-          apiKey: process.env.OPENAI_API_KEY,
-        }),
+        // model: openai("gpt-4o-mini", {
+        //   apiKey: process.env.OPENAI_API_KEY,
+        // }),
+        model: openai("gpt-4o-mini"),
         schema: narrativeSchema,
         prompt: `Analyze these ${comments.length} TikTok comments and identify the main narrative and secondary narratives being discussed. 
 

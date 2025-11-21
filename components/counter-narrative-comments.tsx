@@ -243,6 +243,7 @@ export function CounterNarrativeComments({
               <RefreshCw
                 className={`h-4 w-4 ${isAnalyzing ? "animate-spin" : ""}`}
               />
+              {aiCounterData ? "Re-analyze" : "Analyze"}
             </Button>
           </div>
         </div>

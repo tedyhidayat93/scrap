@@ -7,6 +7,7 @@ import { SentimentAnalysis } from "@/components/sentiment-analysis";
 import { RecentComments } from "@/components/recent-comments";
 import { SearchQuery } from "@/components/search-query";
 import { NarrativeDetection } from "@/components/narrative-detection";
+import { CounterNarrativeComments } from "@/components/counter-narrative-comments";
 import { AccountRiskAnalysis } from "@/components/account-risk-analysis";
 import { CrawlingLog } from "@/components/crawling-log";
 import { RecentVideos } from "@/components/recent-videos";
@@ -225,7 +226,10 @@ export default function Page() {
         <IntelligenceAnalysis data={enhancedData} />
 
         <div className="grid gap-4 lg:grid-cols-2">
-          <NarrativeDetection data={enhancedData} />
+          <div className="space-y-4">
+            <NarrativeDetection data={enhancedData} />
+            <CounterNarrativeComments data={enhancedData} />
+          </div>
           <div className="space-y-4">
             <ProComments data={enhancedData} />
             <ContraComments data={enhancedData} />

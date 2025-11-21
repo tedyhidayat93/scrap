@@ -21,7 +21,7 @@ interface RecentVideosProps {
 export function RecentVideos({ data }: RecentVideosProps) {
   const { videos = [], isLoading } = data;
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(9);
 
   if (isLoading) {
     return (
@@ -171,7 +171,7 @@ export function RecentVideos({ data }: RecentVideosProps) {
               setPageSize(s);
               setPage(1);
             }}
-            pageSizeOptions={[5, 10, 25, 50]}
+            pageSizeOptions={[6, 9, 18, 36, 72, 90, 144, 162, 180]}
           />
         )}
       </CardContent>
