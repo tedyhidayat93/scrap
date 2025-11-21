@@ -6,32 +6,19 @@ const counterNarrativeSchema = z.object({
   counterComments: z
     .array(
       z.object({
-        text: z.string().describe("The comment text"),
-        reason: z
-          .string()
-          .describe("Why this comment counters the main narrative"),
-        counterScore: z
-          .number()
-          .min(1)
-          .max(10)
-          .describe("How strongly it contradicts (1-10)"),
-        keywords: z
-          .array(z.string())
-          .describe("Key disagreement words or phrases"),
+        text: z.string(),
+        reason: z.string().optional().default(""),
+        counterScore: z.number().min(1).max(10).optional().default(5),
+        keywords: z.array(z.string()).optional().default([]),
       })
     )
     .max(20)
-    .describe("Comments that contradict or challenge the main narrative"),
+    .default([]),
+
   summary: z.object({
-    totalCounter: z
-      .number()
-      .describe("Total number of counter-narrative comments found"),
-    percentage: z
-      .number()
-      .describe("Percentage of comments that counter the narrative"),
-    mainObjections: z
-      .array(z.string())
-      .describe("Common objections or criticisms"),
+    totalCounter: z.number().default(0),
+    percentage: z.number().default(0),
+    mainObjections: z.array(z.string()).default([]),
   }),
 });
 
@@ -43,61 +30,85 @@ export async function POST(req: Request) {
       return Response.json({ error: "No comments provided" }, { status: 400 });
     }
 
-    // Sample comments for AI analysis
+    // Ambil 100 komentar maksimum untuk AI
     const sampleComments = comments
       .slice(0, 100)
       .map((c: any, idx: number) => `[${idx}] ${c.text}`)
-      .filter(Boolean)
       .join("\n");
 
     const { object } = await generateObject({
-      // model: "openai/gpt-4o-mini",
       model: openai("gpt-4o-mini"),
       schema: counterNarrativeSchema,
-      prompt: `Analyze these TikTok comments and identify which ones CONTRADICT or CHALLENGE the main narrative.
+      // prompt: `
+      // Analyze these TikTok comments and identify which ones contradict or challenge the main narrative.
 
-Main Narrative: ${mainNarrative || "The dominant opinion in the comments"}
+      // Main Narrative: ${mainNarrative || "The dominant opinion in the comments"}
 
-Comments (total: ${comments.length}):
-${sampleComments}
+      // Comments:
+      // ${sampleComments}
 
-Find comments that:
-- Disagree with the main narrative
-- Express skepticism or doubt
-- Present opposing viewpoints
-- Challenge the dominant opinion
-- Criticize or question the content
+      // Return only:
+      // - counterComments[] (max 20)
+      // - summary
+      // `,
 
-For each counter-narrative comment, explain WHY it contradicts the main narrative and rate how strongly (1-10).`,
+      prompt: `
+        Analyze these TikTok comments and identify which ones contradict or challenge the main narrative in an elegant and factual way.
+
+        Main Narrative:
+        ${mainNarrative || "The dominant opinion in the comments"}
+
+        Comments:
+        ${sampleComments}
+
+        Your tasks:
+        1. Identify comments that contradict, challenge, or question the main narrative.
+        2. For each counter-matching comment, create a refined counter-narrative statement that is:
+          - Elegant and non-aggressive.
+          - Factual and logical.
+          - Written in a formal tone but still easy to understand.
+          - At least 10 words.
+          - Written in the SAME LANGUAGE as the original comment (if the comment is in Indonesian, respond in Indonesian; if English, respond in English).
+        3. Provide:
+          - counterComments[] (max 20)
+          - summary
+
+        Return ONLY what the schema expects:
+        - counterComments[] with:
+          - text
+          - reason
+          - counterScore
+          - keywords
+        - summary with totalCounter, percentage, and mainObjections
+        `,
+
       temperature: 0.3,
     });
 
-    // Map AI results back to original comments
-    const enrichedCounterComments = object.counterComments
-      .map((aiComment) => {
-        // Find the original comment by matching text
-        const originalComment = comments.find(
-          (c: any) => c.text && aiComment.text.includes(c.text.substring(0, 50))
-        );
+    // Matching komentar yang lebih aman
+    const enrichedCounter = object.counterComments.map((ai) => {
+      const original = comments.find((c: any) => c.text === ai.text);
 
-        return {
-          ...originalComment,
-          ...aiComment,
-          counterScore: aiComment.counterScore,
-          counterReason: aiComment.reason,
-          counterKeywords: aiComment.keywords,
-        };
-      })
-      .filter(Boolean);
+      return {
+        ...(original || {}), // kalau ketemu ambil data original
+        text: ai.text, // fallback
+        counterScore: ai.counterScore,
+        counterReason: ai.reason,
+        counterKeywords: ai.keywords,
+      };
+    });
 
     return Response.json({
-      ...object,
-      counterComments: enrichedCounterComments,
+      summary: object.summary,
+      counterComments: enrichedCounter,
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error("[v0] Error analyzing counter-narratives:", error);
+
     return Response.json(
-      { error: "Failed to analyze counter-narratives" },
+      {
+        error: error?.message || "Failed to analyze counter-narratives",
+      },
       { status: 500 }
     );
   }
