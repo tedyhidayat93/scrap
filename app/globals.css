@@ -5,9 +5,9 @@
 
 :root {
   /* Cybersecurity professional theme - dark navy, grays, and tech blue accents */
-  --background: oklch(0.09 0.01 240);
+  --background: oklch(12.595% 0.00538 226.159);
   --foreground: oklch(0.95 0.005 240);
-  --card: oklch(0.12 0.015 240);
+  --card: oklch(12.424% 0.02253 219.369);
   --card-foreground: oklch(0.95 0.005 240);
   --popover: oklch(0.11 0.015 240);
   --popover-foreground: oklch(0.95 0.005 240);
@@ -23,7 +23,7 @@
   --destructive-foreground: oklch(0.98 0.005 240);
   --success: oklch(0.65 0.15 140);
   --warning: oklch(0.75 0.18 85);
-  --border: oklch(0.25 0.02 240 / 0.5);
+  --border: oklch(22.552% 0.01295 233.244 / 0.5);
   --input: oklch(0.15 0.015 240);
   --ring: oklch(0.65 0.15 220);
   --chart-1: oklch(0.65 0.15 220);
@@ -79,12 +79,6 @@
   --sidebar-ring: oklch(0.65 0.15 220);
 }
 
-@utility layer {
-  .bg-card {
-    @apply pt-5;
-  }
-}
-
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -130,6 +124,7 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
     /* Adding monospace font option and subtle scan lines for cybersecurity aesthetic */
@@ -137,15 +132,19 @@
       sans-serif;
   }
 
+  button {
+    @apply cursor-pointer;
+  }
+
   /* Subtle tech grid pattern for cybersecurity theme */
   .cyber-grid {
     background-image: linear-gradient(
-        color-mix(in oklch, var(--color-primary), transparent 95%) 1px,
+        color-mix(in oklch, var(--color-primary), transparent 94%) 1px,
         transparent 1px
       ),
       linear-gradient(
         90deg,
-        color-mix(in oklch, var(--color-primary), transparent 95%) 1px,
+        color-mix(in oklch, var(--color-primary), transparent 94%) 1px,
         transparent 1px
       );
     background-size: 50px 50px;

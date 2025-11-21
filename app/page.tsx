@@ -192,7 +192,7 @@ export default function Page() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen">
       <DashboardHeader username={query} />
       <main className="container mx-auto p-6 space-y-6 cyber-grid">
         <SearchQuery
@@ -209,9 +209,11 @@ export default function Page() {
 
         <MetricsOverview data={enhancedData} />
 
-        <div className="grid gap-4 lg:grid-cols-3">
-          <PlatformCharts data={enhancedData} />
-          <SentimentAnalysis data={enhancedData} />
+        <div className="grid gap-4 lg:grid-cols-2">
+          <div className="space-y-4">
+            <PlatformCharts data={enhancedData} />
+            <SentimentAnalysis data={enhancedData} />
+          </div>
           <RecentVideos
             data={{
               videos: apiData.videos,

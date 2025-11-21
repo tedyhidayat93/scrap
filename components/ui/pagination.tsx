@@ -52,7 +52,7 @@ type PaginationLinkProps = {
 function PaginationLink({
   className,
   isActive,
-  size = "icon",
+  size = "sm",
   ...props
 }: PaginationLinkProps) {
   return (
@@ -62,8 +62,9 @@ function PaginationLink({
       data-active={isActive}
       className={cn(
         buttonVariants({
-          variant: isActive ? "outline" : "ghost",
+          variant: isActive ? "default" : "ghost",
           size,
+          className: "cursor-pointer",
         }),
         className
       )}
@@ -79,7 +80,7 @@ function PaginationPrevious({
   return (
     <PaginationLink
       aria-label="Go to previous page"
-      size="default"
+      size="sm"
       className={cn("gap-1 px-2.5 sm:pl-2.5", className)}
       {...props}
     >
@@ -96,7 +97,7 @@ function PaginationNext({
   return (
     <PaginationLink
       aria-label="Go to next page"
-      size="default"
+      size="sm"
       className={cn("gap-1 px-2.5 sm:pr-2.5", className)}
       {...props}
     >
@@ -150,7 +151,7 @@ export default function DefaultPagination({
   totalItems,
   pageSize,
   onPageSizeChange,
-  pageSizeOptions = [5, 10, 20],
+  pageSizeOptions = [5, 10, 20, 50, 100],
   maxButtons = 7,
 }: DefaultPaginationProps) {
   const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
@@ -175,31 +176,33 @@ export default function DefaultPagination({
   const pages = makeRange(start, end);
 
   return (
-    <Pagination className="w-full">
-      <PaginationPrevious
-        onClick={() => {
-          if (page > 1) onPageChange(Math.max(1, page - 1));
-        }}
-        aria-disabled={page === 1}
-      />
-      <PaginationContent>
-        {pages.map((p) => (
-          <PaginationItem key={p}>
-            <PaginationLink
-              isActive={p === page}
-              onClick={() => onPageChange(p)}
-            >
-              {p}
-            </PaginationLink>
-          </PaginationItem>
-        ))}
-      </PaginationContent>
-      <PaginationNext
-        onClick={() => {
-          if (page < totalPages) onPageChange(Math.min(totalPages, page + 1));
-        }}
-        aria-disabled={page === totalPages}
-      />
+    <Pagination className="w-full flex justify-between flex-wrap items-center">
+      <div className="flex flex-wrap items-center gap-2">
+        <PaginationPrevious
+          onClick={() => {
+            if (page > 1) onPageChange(Math.max(1, page - 1));
+          }}
+          aria-disabled={page === 1}
+        />
+        <PaginationContent>
+          {pages.map((p) => (
+            <PaginationItem key={p}>
+              <PaginationLink
+                isActive={p === page}
+                onClick={() => onPageChange(p)}
+              >
+                {p}
+              </PaginationLink>
+            </PaginationItem>
+          ))}
+        </PaginationContent>
+        <PaginationNext
+          onClick={() => {
+            if (page < totalPages) onPageChange(Math.min(totalPages, page + 1));
+          }}
+          aria-disabled={page === totalPages}
+        />
+      </div>
 
       <div className="ml-4 flex items-center gap-2">
         <div className="text-sm text-muted-foreground">

@@ -290,7 +290,7 @@ export function SentimentAnalysis({ data }: SentimentAnalysisProps) {
                   </AlertDescription>
                 </Alert>
               )}
-              <div className="space-y-2">
+              <div className="space-y-2 max-h-84 overflow-y-auto">
                 {loadingKeywords ? (
                   <div className="text-sm text-muted-foreground text-center py-4">
                     Analyzing keywords with AI...
