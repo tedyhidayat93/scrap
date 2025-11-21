@@ -203,46 +203,54 @@ export default function Page() {
           isLoading={isAnalyzing}
         />
 
-        <CrawlingLog
-          logs={crawlingLogs}
-          isActive={isAnalyzing || !!apiData.isLoading}
-        />
+        {query ? (
+          <div className="space-y-6">
+            <CrawlingLog
+              logs={crawlingLogs}
+              isActive={isAnalyzing || !!apiData.isLoading}
+            />
 
-        <MetricsOverview data={enhancedData} />
+            {apiData.totalComments > 0 && (
+              <>
+                <MetricsOverview data={enhancedData} />
 
-        <div className="grid gap-4 lg:grid-cols-2">
-          <div className="space-y-4">
-            <PlatformCharts data={enhancedData} />
-            <SentimentAnalysis data={enhancedData} />
+                <div className="grid gap-4 lg:grid-cols-2">
+                  <div className="space-y-4">
+                    <PlatformCharts data={enhancedData} />
+                    <SentimentAnalysis data={enhancedData} />
+                  </div>
+                  <RecentVideos
+                    data={{
+                      videos: apiData.videos,
+                      isLoading: Boolean(apiData.isLoading),
+                    }}
+                  />
+                </div>
+
+                <IntelligenceAnalysis data={enhancedData} />
+
+                <div className="grid gap-4 lg:grid-cols-2">
+                  <div className="space-y-4">
+                    <NarrativeDetection data={enhancedData} />
+                    <CounterNarrativeComments data={enhancedData} />
+                  </div>
+                  <div className="space-y-4">
+                    <ProComments data={enhancedData} />
+                    <ContraComments data={enhancedData} />
+                  </div>
+                </div>
+
+                <AccountRiskAnalysis data={enhancedData} />
+                <RecentComments
+                  data={enhancedData}
+                  onLoadMore={handleLoadMore}
+                  isLoadingMore={isLoadingMore}
+                  hasMore={hasMore && queryType === "video"}
+                />
+              </>
+            )}
           </div>
-          <RecentVideos
-            data={{
-              videos: apiData.videos,
-              isLoading: Boolean(apiData.isLoading),
-            }}
-          />
-        </div>
-
-        <IntelligenceAnalysis data={enhancedData} />
-
-        <div className="grid gap-4 lg:grid-cols-2">
-          <div className="space-y-4">
-            <NarrativeDetection data={enhancedData} />
-            <CounterNarrativeComments data={enhancedData} />
-          </div>
-          <div className="space-y-4">
-            <ProComments data={enhancedData} />
-            <ContraComments data={enhancedData} />
-          </div>
-        </div>
-
-        <AccountRiskAnalysis data={enhancedData} />
-        <RecentComments
-          data={enhancedData}
-          onLoadMore={handleLoadMore}
-          isLoadingMore={isLoadingMore}
-          hasMore={hasMore && queryType === "video"}
-        />
+        ) : null}
       </main>
     </div>
   );

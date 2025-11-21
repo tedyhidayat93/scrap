@@ -41,10 +41,6 @@ export function RecentVideos({ data }: RecentVideosProps) {
     );
   }
 
-  if (!videos || videos.length === 0) {
-    return null;
-  }
-
   const total = videos.length;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const startIndex = (page - 1) * pageSize;
@@ -86,7 +82,6 @@ export function RecentVideos({ data }: RecentVideosProps) {
 
     return "/placeholder.svg";
   }
-
   return (
     <Card className="bg-card border-border pb-0">
       <CardHeader className="py-4 pb-3">
@@ -95,86 +90,98 @@ export function RecentVideos({ data }: RecentVideosProps) {
           Recent Videos Analyzed ({displayVideos.length})
         </CardTitle>
       </CardHeader>
-      <CardContent className="gap-5 flex flex-col justify-between">
-        <div
-          className={`grid ${
-            displayVideos.length === 1 ? "grid-cols-2" : "md:grid-cols-3"
-          } gap-1 max-h-lvh w-full overflow-y-auto`}
-        >
-          {displayVideos.map((video, idx) => {
-            const stats = video.stats || video.statistics || {};
-            const author = video.author || {};
-            const videoId = video.aweme_id || video.id;
-            const authorName = author.unique_id || author.nickname || "Unknown";
 
-            const thumbnail = getThumbnail(video);
-            const thumbnailSrc =
-              typeof thumbnail === "string" && /^https?:\/\//i.test(thumbnail)
-                ? `/api/image-proxy?url=${encodeURIComponent(thumbnail)}`
-                : thumbnail;
-
-            return (
-              <a
-                key={videoId || idx}
-                href={`https://www.tiktok.com/@${authorName}/video/${videoId}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group flex flex-col gap-2 p-3 rounded-lg bg-muted/30 border border-border hover:bg-muted/50 hover:border-primary/50 transition-all"
-              >
-                <div className="aspect-9/16 rounded-md bg-muted overflow-hidden relative max-h-52">
-                  <img
-                    src={thumbnailSrc}
-                    alt="Video thumbnail"
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                  />
-                  {/* {thumbnail ? (
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <Video  className="w-8 h-8 text-muted-foreground" />
-                    </div>
-                  )} */}
-                  <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-1.5 py-0.5 rounded">
-                    {video.video?.duration || "0:00"}
-                  </div>
-                </div>
-                <div className="space-y-1.5">
-                  <p className="text-xs font-medium text-card-foreground line-clamp-2 leading-tight">
-                    {video.desc || "No description"}
-                  </p>
-                  <p className="text-xs text-muted-foreground">@{authorName}</p>
-                  <div className="flex items-center gap-3 text-[8px] text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      <Heart className="w-2 h-2" />
-                      {stats.diggCount || stats.digg_count || 0}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <MessageCircle className="w-2 h-2" />
-                      {stats.commentCount || stats.comment_count || 0}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Share2 className="w-2 h-2" />
-                      {stats.shareCount || stats.share_count || 0}
-                    </span>
-                  </div>
-                </div>
-              </a>
-            );
-          })}
+      {!videos || videos.length === 0 ? (
+        <div className="text-sm text-muted-foreground flex items-center justify-center text-center py-8">
+          Enter a query to analyze videos
         </div>
-        {total > 6 && (
-          <Pagination
-            page={page}
-            onPageChange={(p: number) => setPage(p)}
-            totalItems={total}
-            pageSize={pageSize}
-            onPageSizeChange={(s: number) => {
-              setPageSize(s);
-              setPage(1);
-            }}
-            pageSizeOptions={[6, 9, 18, 36, 72, 90, 144, 162, 180]}
-          />
-        )}
-      </CardContent>
+      ) : (
+        <CardContent className="gap-5 flex flex-col justify-between">
+          <div
+            className={`grid ${
+              displayVideos.length === 1 ? "grid-cols-2" : "md:grid-cols-3"
+            } gap-1 max-h-lvh w-full overflow-y-auto`}
+          >
+            {displayVideos.map((video, idx) => {
+              const stats = video.stats || video.statistics || {};
+              const author = video.author || {};
+              const videoId = video.aweme_id || video.id;
+              const authorName =
+                author.unique_id || author.nickname || "Unknown";
+
+              const thumbnail = getThumbnail(video);
+              const thumbnailSrc =
+                typeof thumbnail === "string" && /^https?:\/\//i.test(thumbnail)
+                  ? `/api/image-proxy?url=${encodeURIComponent(thumbnail)}`
+                  : thumbnail;
+
+              return (
+                <a
+                  key={videoId || idx}
+                  href={`https://www.tiktok.com/@${authorName}/video/${videoId}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group flex flex-col gap-2 p-3 rounded-lg bg-muted/30 border border-border hover:bg-muted/50 hover:border-primary/50 transition-all"
+                >
+                  <div className="aspect-9/16 rounded-md bg-muted overflow-hidden relative max-h-52">
+                    <img
+                      src={thumbnailSrc}
+                      alt="Video thumbnail"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                      onError={(e) => {
+                        const target = e.currentTarget;
+                        target.onerror = null; // cegah infinite loop
+                        target.src = "/placeholder.svg";
+                      }}
+                    />
+                    <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-1.5 py-0.5 rounded">
+                      {video.video?.duration || "0:00"}
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <p className="text-xs font-medium text-card-foreground line-clamp-2 leading-tight">
+                      {video.desc || "No description"}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      @{authorName}
+                    </p>
+
+                    <div className="flex items-center gap-3 text-[8px] text-muted-foreground">
+                      <span className="flex items-center gap-1">
+                        <Heart className="w-2 h-2" />
+                        {stats.diggCount || stats.digg_count || 0}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <MessageCircle className="w-2 h-2" />
+                        {stats.commentCount || stats.comment_count || 0}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Share2 className="w-2 h-2" />
+                        {stats.shareCount || stats.share_count || 0}
+                      </span>
+                    </div>
+                  </div>
+                </a>
+              );
+            })}
+          </div>
+
+          {total > 6 && (
+            <Pagination
+              page={page}
+              onPageChange={(p: number) => setPage(p)}
+              totalItems={total}
+              pageSize={pageSize}
+              onPageSizeChange={(s: number) => {
+                setPageSize(s);
+                setPage(1);
+              }}
+              pageSizeOptions={[6, 9, 18, 36, 72, 90, 144, 162, 180]}
+            />
+          )}
+        </CardContent>
+      )}
     </Card>
   );
 }
