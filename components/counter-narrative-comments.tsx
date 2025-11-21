@@ -337,6 +337,9 @@ export function CounterNarrativeComments({
                         {comment.counterReason && (
                           <p className="text-xs text-muted-foreground italic mb-2 p-2 bg-muted/50 rounded">
                             Why it counters: {comment.counterReason}
+                            <br />
+                            <br />
+                            Counter Narative: <i>"{comment.word}"</i>
                           </p>
                         )}
                         <div className="flex items-center gap-4 text-xs text-muted-foreground flex-wrap">

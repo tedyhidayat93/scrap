@@ -8,6 +8,11 @@ const counterNarrativeSchema = z.object({
       z.object({
         text: z.string(),
         reason: z.string().optional().default(""),
+        word: z
+          .string()
+          .describe("The counter-narrative sentence addressing the comment")
+          .optional()
+          .default(""),
         counterScore: z.number().min(1).max(10).optional().default(5),
         keywords: z.array(z.string()).optional().default([]),
       })
@@ -52,8 +57,39 @@ export async function POST(req: Request) {
       // - summary
       // `,
 
+      // prompt: `
+      //   Analyze these TikTok comments and identify which ones contradict or challenge the main narrative.
+
+      //   Main Narrative:
+      //   ${mainNarrative || "The dominant opinion in the comments"}
+
+      //   Comments:
+      //   ${sampleComments}
+
+      //   Your tasks:
+      //   1. Identify comments that contradict, challenge, or question the main narrative.
+      //   2. For each counter-matching comment, create a refined counter-narrative statement that is:
+      //     - Elegant and non-aggressive.
+      //     - Factual and logical.
+      //     - Written in a formal tone but still easy to understand.
+      //     - At least 10 words.
+      //     - Written in the SAME LANGUAGE as the original comment (if the comment is in Indonesian, respond in Indonesian; if English, respond in English).
+      //   3. Provide:
+      //     - counterComments[] (max 20)
+      //     - summary
+
+      //   Return ONLY what the schema expects:
+      //   - counterComments[] with:
+      //     - text
+      //     - reason
+      //     - word
+      //     - counterScore
+      //     - keywords
+      //   - summary with totalCounter, percentage, and mainObjections
+      //   `,
+
       prompt: `
-        Analyze these TikTok comments and identify which ones contradict or challenge the main narrative in an elegant and factual way.
+        Analyze these TikTok comments and identify which ones contradict or challenge the main narrative in an elegant and factual manner.
 
         Main Narrative:
         ${mainNarrative || "The dominant opinion in the comments"}
@@ -63,24 +99,20 @@ export async function POST(req: Request) {
 
         Your tasks:
         1. Identify comments that contradict, challenge, or question the main narrative.
-        2. For each counter-matching comment, create a refined counter-narrative statement that is:
-          - Elegant and non-aggressive.
-          - Factual and logical.
-          - Written in a formal tone but still easy to understand.
-          - At least 10 words.
-          - Written in the SAME LANGUAGE as the original comment (if the comment is in Indonesian, respond in Indonesian; if English, respond in English).
-        3. Provide:
+        2. For each identified comment, generate:
+          - A refined counter-narrative sentence (field: "word") that is:
+            • Elegant, non-aggressive, and factual  
+            • Written in a formal tone and easy to understand  
+            • At least 10 words  
+            • Written in the SAME LANGUAGE as the original comment  
+        3. Also include:
+          - The reason why the comment is considered counter-narrative
+          - A counterScore (1-10)
+          - Related keywords
+        4. Return ONLY:
           - counterComments[] (max 20)
           - summary
-
-        Return ONLY what the schema expects:
-        - counterComments[] with:
-          - text
-          - reason
-          - counterScore
-          - keywords
-        - summary with totalCounter, percentage, and mainObjections
-        `,
+        Following the schema structure exactly.`,
 
       temperature: 0.3,
     });
@@ -94,6 +126,7 @@ export async function POST(req: Request) {
         text: ai.text, // fallback
         counterScore: ai.counterScore,
         counterReason: ai.reason,
+        counterWord: ai.word,
         counterKeywords: ai.keywords,
       };
     });
