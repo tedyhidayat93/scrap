@@ -735,31 +735,6 @@ export async function GET(request: Request) {
             platform: "tiktok",
           }))
         );
-
-        // const commentsResult = await fetchTikTokVideoComments(videoUrl);
-        // if (!commentsResult.error && commentsResult.data?.comments) {
-        //   allComments.push(
-        //     ...commentsResult.data.comments.map((c: any) => ({
-        //       ...c,
-        //       platform: "tiktok",
-        //       videoId: videoId,
-        //       videoUrl: videoUrl,
-        //     }))
-        //   );
-        //   successfulVideos++;
-        //   console.log(
-        //     "[v0] Successfully fetched comments from video:",
-        //     videoUrl
-        //   );
-        // } else {
-        //   failedVideos++;
-        //   console.log(
-        //     "[v0] Failed to fetch comments from video:",
-        //     videoUrl,
-        //     "Error:",
-        //     commentsResult.error
-        //   );
-        // }
       } catch (videoError) {
         failedVideos++;
         console.error(
