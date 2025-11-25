@@ -1,34 +1,46 @@
-"use client"
+"use client";
 
-import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Calendar, Download, RefreshCw } from "lucide-react"
-import { useTikTokComments } from "@/hooks/use-tiktok-comments"
-import { useState } from "react"
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Calendar, Download, RefreshCw } from "lucide-react";
+import { useTikTokComments } from "@/hooks/use-tiktok-comments";
+import { useState } from "react";
 
 interface DashboardHeaderProps {
-  username: string
+  username: string;
+  type: "username" | "video" | "keyword";
 }
 
-export function DashboardHeader({ username }: DashboardHeaderProps) {
-  const { refresh, videosAnalyzed, totalVideos } = useTikTokComments(username)
-  const [isRefreshing, setIsRefreshing] = useState(false)
+export function DashboardHeader({ username, type }: DashboardHeaderProps) {
+  const { refresh, videosAnalyzed, totalVideos } = useTikTokComments(
+    username,
+    type
+  );
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const handleRefresh = async () => {
-    setIsRefreshing(true)
+    setIsRefreshing(true);
     try {
-      await refresh()
+      await refresh();
     } finally {
-      setIsRefreshing(false)
+      setIsRefreshing(false);
     }
-  }
+  };
 
   return (
     <header className="border-b border-border bg-card">
       <div className="container mx-auto px-6 py-4">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-card-foreground">TikTok Comment Analytics</h1>
+            <h1 className="text-2xl font-semibold tracking-tight text-card-foreground">
+              TikTok Comment Analytics
+            </h1>
             <p className="text-sm text-muted-foreground mt-1">
               {username
                 ? `Analyzing ${videosAnalyzed} of ${totalVideos} videos from @${username}`
@@ -48,8 +60,15 @@ export function DashboardHeader({ username }: DashboardHeaderProps) {
                 <SelectItem value="90d">Last 90 days</SelectItem>
               </SelectContent>
             </Select>
-            <Button variant="outline" size="sm" onClick={handleRefresh} disabled={isRefreshing || !username}>
-              <RefreshCw className={`mr-2 h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRefresh}
+              disabled={isRefreshing || !username}
+            >
+              <RefreshCw
+                className={`mr-2 h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
+              />
               {isRefreshing ? "Refreshing..." : "Refresh"}
             </Button>
             <Button variant="outline" size="sm" disabled={!username}>
@@ -60,5 +79,5 @@ export function DashboardHeader({ username }: DashboardHeaderProps) {
         </div>
       </div>
     </header>
-  )
+  );
 }

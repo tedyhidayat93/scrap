@@ -194,7 +194,7 @@ export default function Page() {
 
   return (
     <div className="min-h-screen">
-      <DashboardHeader username={query} />
+      <DashboardHeader username={query} type={queryType} />
       <main className="container mx-auto p-6 space-y-6 cyber-grid">
         <SearchQuery
           onSearch={handleSearch}

@@ -17,7 +17,7 @@ export function CrawlingLog({ logs, isActive }: CrawlingLogProps) {
   if (logs.length === 0 && !isActive) return null;
 
   return (
-    <Card className="border-border/40 bg-card/50 backdrop-blur">
+    <Card className="border-border bg-card backdrop-blur">
       <div className="p-4 border-b border-border/40">
         <div className="flex items-center gap-2">
           {isActive ? (

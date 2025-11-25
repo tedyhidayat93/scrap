@@ -111,11 +111,16 @@ export function SearchQuery({
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyPress={handleKeyPress}
-            className="flex-1 border border-cyan-900/50"
+            className="flex-1 border border-cyan-900/50 hover:border-cyan-900"
             disabled={isLoading}
           />
           <Button
             onClick={handleSearch}
+            className={
+              !inputValue.trim() || !inputValue || isLoading
+                ? "opacity-50 cursor-not-allowed!"
+                : ""
+            }
             disabled={!inputValue.trim() || isLoading}
           >
             {isLoading ? (
@@ -132,13 +137,13 @@ export function SearchQuery({
           </Button>
         </div>
 
-        <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-md">
+        <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-md group">
           <Switch
             id="latest-only"
             checked={latestOnly}
             onCheckedChange={setLatestOnly}
             disabled={isLoading}
-            className="border border-cyan-900/50"
+            className="border group-hover:border-cyan-900 border-cyan-900/50"
           />
           <Label htmlFor="latest-only" className="text-sm cursor-pointer">
             Latest video only (analyze only the most recent video)
