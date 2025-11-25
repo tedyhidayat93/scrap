@@ -214,8 +214,8 @@ export function CounterNarrativeComments({
   return (
     <Card className="bg-card py-5 border-border">
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
+        <div className="flex items-start gap-4 justify-between">
+          <div className="lg:max-w-96">
             <CardTitle className="text-lg font-semibold text-card-foreground flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-chart-5" />
               AI Counter-Narrative Detection
@@ -224,16 +224,7 @@ export function CounterNarrativeComments({
               AI-powered detection of comments that contradict the majority
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            {aiCounterData && (
-              <Badge
-                variant="outline"
-                className="bg-chart-5/10 text-chart-5 border-chart-5/20"
-              >
-                {aiCounterData.counterComments?.length || 0} comments (
-                {counterPercentage}%)
-              </Badge>
-            )}
+          <div className="flex items-end flex-col gap-2">
             <Button
               variant="outline"
               size="sm"
@@ -245,6 +236,15 @@ export function CounterNarrativeComments({
               />
               {aiCounterData ? "Re-analyze" : "Analyze"}
             </Button>
+            {aiCounterData && (
+              <Badge
+                variant="outline"
+                className="bg-chart-5/10 text-chart-5 border-chart-5/20"
+              >
+                {aiCounterData.counterComments?.length || 0} comments (
+                {counterPercentage}%)
+              </Badge>
+            )}
           </div>
         </div>
       </CardHeader>

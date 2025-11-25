@@ -227,6 +227,13 @@ export default function Page() {
                   />
                 </div>
 
+                <RecentComments
+                  data={enhancedData}
+                  onLoadMore={handleLoadMore}
+                  isLoadingMore={isLoadingMore}
+                  hasMore={hasMore && queryType === "video"}
+                />
+
                 <IntelligenceAnalysis data={enhancedData} />
 
                 <div className="grid gap-4 lg:grid-cols-2">
@@ -241,12 +248,6 @@ export default function Page() {
                 </div>
 
                 <AccountRiskAnalysis data={enhancedData} />
-                <RecentComments
-                  data={enhancedData}
-                  onLoadMore={handleLoadMore}
-                  isLoadingMore={isLoadingMore}
-                  hasMore={hasMore && queryType === "video"}
-                />
               </>
             )}
           </div>

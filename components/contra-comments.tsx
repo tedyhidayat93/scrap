@@ -101,7 +101,7 @@ export function ContraComments({ data }: ContraCommentsProps) {
   return (
     <Card className="bg-card py-5 border-border">
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex items-start justify-between">
           <div>
             <CardTitle className="text-lg font-semibold text-card-foreground flex items-center gap-2">
               <ThumbsDown className="h-5 w-5 text-red-500" />
@@ -111,16 +111,7 @@ export function ContraComments({ data }: ContraCommentsProps) {
               Comments opposing the video narrative
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            {displayData && (
-              <Badge
-                variant="outline"
-                className="bg-red-500/10 text-red-500 border-red-500/20"
-              >
-                {displayData.contraComments?.length || 0} comments (
-                {contraPercentage}%)
-              </Badge>
-            )}
+          <div className="flex items-end flex-col gap-2">
             <Button
               variant="outline"
               size="sm"
@@ -132,6 +123,15 @@ export function ContraComments({ data }: ContraCommentsProps) {
               />
               {aiContraData ? "Re-analyze" : "Enhance"} with AI
             </Button>
+            {displayData && (
+              <Badge
+                variant="outline"
+                className="bg-red-500/10 text-red-500 border-red-500/20"
+              >
+                {displayData.contraComments?.length || 0} comments (
+                {contraPercentage}%)
+              </Badge>
+            )}
           </div>
         </div>
       </CardHeader>
