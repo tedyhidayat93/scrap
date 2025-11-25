@@ -31,8 +31,7 @@ build:
     - docker push $DOCKER_IMAGE
     - docker push $DOCKER_IMAGE_LATEST
   only:
-    - main
-    - develop
+    - dev
     - tags
 
 # Test stage - Run tests (optional, customize based on your needs)
