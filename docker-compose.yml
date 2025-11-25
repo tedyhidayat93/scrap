@@ -4,20 +4,14 @@ services:
     container_name: comment-scraper-fe-prod
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "3017:3000"
     environment:
       - NODE_ENV=production
     env_file:
       - .env.production
-    networks:
-      - app-network
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
-
-networks:
-  app-network:
-    driver: bridge
