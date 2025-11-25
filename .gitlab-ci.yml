@@ -63,6 +63,7 @@ deploy_production:
     - server-surabaya-shell
   script:
     - echo "Deploying to production server..."
+    - cp docker-compose.yml /opt/comment-scraper-fe/
     - cd /opt/comment-scraper-fe
     - docker compose pull
     - docker compose up -d --force-recreate
@@ -83,6 +84,7 @@ deploy_staging:
     - server-surabaya-shell
   script:
     - echo "Deploying to staging server..."
+    - cp docker-compose.yml /opt/comment-scraper-fe-staging/
     - cd /opt/comment-scraper-fe-staging
     - docker compose pull
     - docker compose up -d --force-recreate

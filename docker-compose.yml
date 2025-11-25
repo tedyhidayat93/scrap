@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   comment-scraper-fe:
     image: gitlab.optimasi.ai:5050/optimasi-services/comment-scraper-fe:latest
