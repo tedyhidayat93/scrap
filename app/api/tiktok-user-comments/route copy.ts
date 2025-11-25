@@ -2,9 +2,8 @@ import { NextResponse } from "next/server";
 
 // const API_KEY = "5vwUK17XqufRgNt9ejs1synjC2w2"
 // const BASE_URL = "https://api.scrapecreators.com/v1"
-const API_KEY = process.env.TIKTOK_API_KEY!;
+const API_KEY = "5vwUK17XqufRgNt9ejs1synjC2w2";
 const BASE_URL = "https://api.scrapecreators.com/v1";
-const MAX_COMMENTS = 100000; //100.000 comments target fetch
 
 function parseTikTokUrl(
   url: string
@@ -123,7 +122,7 @@ async function fetchTikTokVideoComments(videoUrl: string, cursor?: number) {
   }
 }
 
-async function fetchAllComments(videoUrl: string, max = MAX_COMMENTS) {
+async function fetchAllComments(videoUrl: string, max = 100) {
   let cursor: number | undefined = undefined;
   let all: any[] = [];
   let hasMore = true;

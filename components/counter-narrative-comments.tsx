@@ -322,7 +322,7 @@ export function CounterNarrativeComments({
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           <span className="font-medium text-sm text-card-foreground truncate">
-                            {comment.user?.nickname || "Anonymous"}
+                            {comment.user?.nickname || "Unnamed"}
                           </span>
                           <Badge
                             variant="outline"
