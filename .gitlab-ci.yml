@@ -61,6 +61,8 @@ deploy_production:
   stage: deploy
   tags:
     - server-surabaya-shell
+  needs:
+    - build
   script:
     - echo "Deploying to production server..."
     - cp docker-compose.yml /opt/comment-scraper-fe/
@@ -81,6 +83,8 @@ deploy_staging:
   stage: deploy
   tags:
     - server-surabaya-shell
+  needs:
+    - build
   script:
     - echo "Deploying to staging server..."
     - cp docker-compose.yml /opt/comment-scraper-fe-staging/
