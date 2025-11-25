@@ -122,7 +122,7 @@ async function fetchTikTokVideoComments(videoUrl: string, cursor?: number) {
   }
 }
 
-async function fetchAllComments(videoUrl: string, max = MAX_COMMENTS) {
+async function fetchAllComments(videoUrl: string, max = 100) {
   let cursor: number | undefined = undefined;
   let all: any[] = [];
   let hasMore = true;
@@ -617,7 +617,7 @@ export async function GET(request: Request) {
       }
 
       // const comments = commentsResult.data?.comments || [];
-      const comments = await fetchAllComments(videoUrl, 100);
+      const comments = await fetchAllComments(videoUrl, MAX_COMMENTS);
       const cursor = commentsResult.data?.cursor || null;
       const hasMore = commentsResult.data?.has_more || !!cursor;
 
