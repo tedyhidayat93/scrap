@@ -77,25 +77,25 @@ deploy_production:
   only:
     - dev
 
-# Deploy to Staging
-deploy_staging:
-  extends: .docker_build
-  stage: deploy
-  tags:
-    - server-surabaya-shell
-  needs:
-    - build
-  script:
-    - echo "Deploying to staging server..."
-    - mkdir -p /opt/comment-scraper-fe-staging
-    - cp docker-compose.yml /opt/comment-scraper-fe-staging/
-    - cd /opt/comment-scraper-fe-staging
-    - docker compose pull
-    - docker compose up -d --force-recreate
-    - docker image prune -f || true
-    - echo "Staging deployment completed!"
-  environment:
-    name: staging
-    url: https://staging.your-domain.com
-  only:
+# # Deploy to Staging
+# deploy_staging:
+#   extends: .docker_build
+#   stage: deploy
+#   tags:
+#     - server-surabaya-shell
+#   needs:
+#     - build
+#   script:
+#     - echo "Deploying to staging server..."
+#     - mkdir -p /opt/comment-scraper-fe-staging
+#     - cp docker-compose.yml /opt/comment-scraper-fe-staging/
+#     - cd /opt/comment-scraper-fe-staging
+#     - docker compose pull
+#     - docker compose up -d --force-recreate
+#     - docker image prune -f || true
+#     - echo "Staging deployment completed!"
+#   environment:
+#     name: staging
+#     url: https://staging.your-domain.com
+#   only:
   
