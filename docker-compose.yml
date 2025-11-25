@@ -2,9 +2,7 @@ version: '3.8'
 
 services:
   comment-scraper-fe:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: gitlab.optimasi.ai:5050/optimasi-services/comment-scraper-fe:latest
     container_name: comment-scraper-fe-prod
     restart: unless-stopped
     ports:
