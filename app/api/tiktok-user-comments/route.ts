@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { AnyCnameRecord } from "node:dns";
 
 // const BASE_URL = "https://api.scrapecreators.com/v1"
 const API_KEY = process.env.TIKTOK_API_KEY!;
@@ -29,7 +30,7 @@ function cleanUsername(input: string): string {
 
 async function fetchTikTokUserVideos(handle: string) {
   try {
-    const url = `${BASE_URL}/tiktok/profile/videos?handle=${handle}&amount=100`;
+    const url = `${BASE_URL}/tiktok/profile/videos?handle=${handle}&amount=${MAX_COMMENTS}`;
     console.log("[v0] Fetching videos from:", url);
 
     const response = await fetch(url, {
@@ -147,6 +148,81 @@ async function fetchAllComments(videoUrl: string, max = 100) {
   return all.slice(0, max);
 }
 
+// stream fetch 
+async function fetchCommentsStream(
+  videoUrl: string,
+  callback: (item: any) => void,   // setiap komentar akan dikirim ke UI
+  max = 100
+) {
+  let cursor: number | undefined = undefined;
+  let total = 0;
+  let hasMore = true;
+
+  while (hasMore && total < max) {
+    const res = await fetchTikTokVideoComments(videoUrl, cursor);
+
+    if (res.error) break;
+
+    const comments = res.data?.comments || [];
+
+    for (const c of comments) {
+      callback(c);         // 🔥 langsung kirim real-time
+      total++;
+      if (total >= max) break;
+    }
+
+    cursor = res.data?.cursor;
+    hasMore = res.data?.has_more && !!cursor;
+
+    if (!cursor) break;
+
+    await new Promise((r) => setTimeout(r, 400));
+  }
+
+  return true; // selesai
+}
+
+// fetch comment with retry
+async function fetchWithRetry(fn: Function, args: any[], retry = 3, delay = 1000) {
+  for (let attempt = 1; attempt <= retry; attempt++) {
+    try {
+      return await fn(...args);
+    } catch (err) {
+      console.error(`Attempt ${attempt} gagal`, err);
+      if (attempt === retry) throw err;
+      await new Promise((r) => setTimeout(r, delay));
+    }
+  }
+}
+
+async function fetchAllCommentsWithRetry(videoUrl: string, max = 100) {
+  let cursor: number | undefined = undefined;
+  let all: any[] = [];
+  let hasMore = true;
+
+  while (hasMore && all.length < max) {
+    // 🔥 pakai retry wrapper
+    const res = await fetchWithRetry(fetchTikTokVideoComments, [videoUrl, cursor], 3, 800);
+
+    if (res.error) break;
+
+    const comments = res.data?.comments || [];
+    all.push(...comments);
+
+    cursor = res.data?.cursor;
+    hasMore = res.data?.has_more && !!cursor;
+
+    if (!cursor) break;
+
+    // jeda antar fetch
+    await new Promise((r) => setTimeout(r, 300));
+  }
+
+  return all.slice(0, max);
+}
+
+
+
 async function fetchTikTokVideoInfo(videoUrl: string) {
   try {
     const url = `${BASE_URL}/tiktok/video?url=${encodeURIComponent(videoUrl)}`;
@@ -192,18 +268,113 @@ async function fetchTikTokVideoInfo(videoUrl: string) {
 }
 
 // Detect bots based on comment patterns
+// function detectBots(comments: any[]) {
+//   return comments.map((comment) => {
+//     const text = comment.text || "";
+//     const isBot =
+//       text.length < 5 || // Very short comments
+//       /^[🔥❤️😍👍✨💯]+$/u.test(text) || // Only emojis
+//       /follow.*back/i.test(text) || // Follow back requests
+//       /check.*bio/i.test(text) || // Bio spam
+//       Math.random() < 0.08; // Random 8% for other bot patterns
+
+//     return {
+//       ...comment,
+//       isBot,
+//     };
+//   });
+// }
+
 function detectBots(comments: any[]) {
-  return comments.map((comment) => {
-    const text = comment.text || "";
-    const isBot =
-      text.length < 5 || // Very short comments
-      /^[🔥❤️😍👍✨💯]+$/u.test(text) || // Only emojis
-      /follow.*back/i.test(text) || // Follow back requests
-      /check.*bio/i.test(text) || // Bio spam
-      Math.random() < 0.08; // Random 8% for other bot patterns
+
+  // menggunakan multi–layer heuristics seperti:
+  // pola spam / emoji-only
+  // kecepatan komentar
+  // komentar identik berulang
+  // akun tanpa foto / default username
+  // pengguna terlalu banyak angka
+  // kombinasi skor threshold
+
+  // ✔ Tanpa random — menggunakan deteksi logis
+  // ✔ Mendeteksi akun dengan username aneh
+  // ✔ Mendeteksi komentar-otomatis berulang
+  // ✔ Mendeteksi spam phrase terkenal
+  // ✔ Mendeteksi emoji-only spam
+  // ✔ Mendeteksi akun tanpa foto
+  // ✔ Skor sistem → threshold lebih natural
+  // ✔ Time-anomaly detection (bot spam cepat)
+  const textCounts = new Map<string, number>();
+
+  // Hitung komentar yang identik
+  comments.forEach((c) => {
+    const t = (c.text || "").trim().toLowerCase();
+    textCounts.set(t, (textCounts.get(t) || 0) + 1);
+  });
+
+  return comments.map((comment, index) => {
+    const text = (comment.text || "").trim();
+    const lower = text.toLowerCase();
+    const username = comment.username || "";
+    let score = 0;
+
+    // 1️⃣ Komentar terlalu pendek
+    if (text.length <= 3) score += 2;
+
+    // 2️⃣ Emoji only / heavy emoji spam
+    if (/^[\p{Emoji}\s]+$/u.test(text) && text.length <= 8) score += 3;
+
+    // 3️⃣ Spam phrases
+    const spamPatterns = [
+      /follow.*back/i,
+      /check.*bio/i,
+      /free.*gift/i,
+      /promo/i,
+      /giveaway/i,
+      /dm.*me/i,
+      /click.*link/i,
+      /telegram/i,
+      /whatsapp/i,
+    ];
+    if (spamPatterns.some((p) => p.test(text))) score += 3;
+
+    // 4️⃣ Komentar identik berulang di banyak user (automation spam)
+    const identicalCount = textCounts.get(lower) || 0;
+    if (identicalCount >= 3) score += 2;
+
+    // 5️⃣ Username suspicious (angka banyak, random chars)
+    if (/\d{4,}/.test(username)) score += 2; // username123456
+    if (/^[a-zA-Z0-9._]{0,}$/.test(username) && username.length < 4) score += 1;
+
+    // 6️⃣ No profile picture or default avatar
+    if (
+      !comment.profile_image ||
+      comment.profile_image.includes("default") ||
+      comment.profile_image.includes("avatar")
+    ) {
+      score += 1;
+    }
+
+    // 7️⃣ Time-based anomalies (if timestamps available)
+    if (index > 0) {
+      const prev = comments[index - 1];
+      if (prev.create_time && comment.create_time) {
+        const diff = Math.abs(comment.create_time - prev.create_time);
+        if (diff < 2) score += 2; // too fast → likely automated
+      }
+    }
+
+    // 8️⃣ Like count too low
+    if ((comment.like_count || 0) === 0 && text.length < 6) score += 1;
+
+    // 9️⃣ Repeated emojis like "🔥🔥🔥🔥"
+    if (/([\p{Emoji}])\1{2,}/u.test(text)) score += 2;
+
+    // Final decision threshold
+    const isBot = score >= 4;
 
     return {
       ...comment,
+      botScore: score,
       isBot,
     };
   });
@@ -617,7 +788,8 @@ export async function GET(request: Request) {
       }
 
       // const comments = commentsResult.data?.comments || [];
-      const comments = await fetchAllComments(videoUrl, MAX_COMMENTS);
+      // const comments = await fetchAllComments(videoUrl, MAX_COMMENTS);
+      const comments = await fetchAllCommentsWithRetry(videoUrl, MAX_COMMENTS);
       const cursor = commentsResult.data?.cursor || null;
       const hasMore = commentsResult.data?.has_more || !!cursor;
 
@@ -726,7 +898,8 @@ export async function GET(request: Request) {
         const videoUrl = `https://www.tiktok.com/@${handle}/video/${videoId}`;
         console.log("[v0] Fetching comments for video:", videoUrl);
 
-        const comments = await fetchAllComments(videoUrl, 100);
+        // const comments = await fetchAllComments(videoUrl, 100);
+        const comments = await fetchAllCommentsWithRetry(videoUrl, 100);
         allComments.push(
           ...comments.map((c) => ({
             ...c,
