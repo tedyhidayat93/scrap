@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 
-// const API_KEY = "5vwUK17XqufRgNt9ejs1synjC2w2"
 // const BASE_URL = "https://api.scrapecreators.com/v1"
 const API_KEY = process.env.TIKTOK_API_KEY!;
 const BASE_URL = "https://api.scrapecreators.com/v1";
