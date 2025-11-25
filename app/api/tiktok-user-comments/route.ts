@@ -383,33 +383,83 @@ function detectBots(comments: any[]) {
 // Analyze sentiment
 function analyzeSentiment(text: string): "positive" | "negative" | "neutral" {
   const positiveWords = [
-    "love",
-    "great",
-    "awesome",
-    "amazing",
-    "excellent",
-    "good",
-    "best",
-    "perfect",
-    "wonderful",
-    "beautiful",
-    "nice",
-    "cool",
-    "fire",
-    "lit",
+    // English - core positive
+    "love", "like", "great", "awesome", "amazing", "excellent", "good",
+    "best", "perfect", "wonderful", "beautiful", "nice", "cool",
+    "fire", "lit", "wow", "brilliant", "fantastic", "amazing",
+    "magnificent", "superb", "stunning", "legendary", "epic",
+    "incredible", "insane", "cute", "adorable", "respect",
+
+    // English - strong praise / hype
+    "goat", "goated", "based", "elite", "phenomenal", "top tier",
+    "god tier", "beautiful work", "masterpiece", "amazing job",
+    "so good", "so nice", "so beautiful", "so cool", "insanely good",
+    "absolutely fire", "pure talent", "you killed it", "you nailed it",
+    "chef's kiss",
+
+    // Indonesian - core positive
+    "bagus", "keren", "mantap", "mantul", "hebat", "keren banget",
+    "bagus banget", "baik", "suka", "lancar", "ciamik", "kece",
+    "juara", "terbaik", "sempurna", "indah", "cantik", "ganteng",
+    "amazing banget", "bagus sih", "oke banget",
+
+    // Indonesian - strong praise / hype
+    "gila keren", "gokil", "goks", "mantap jiwa", "keren parah",
+    "bagus parah", "sumpah keren", "sumpah bagus", "niat banget",
+    "the best", "parah bagusnya", "joss", "joss gandos",
+    "keren maksimal", "bagus maksimal", "edan sih", "maknyus",
+
+    // Indonesian slang positive
+    "wihh keren", "anjay keren", "anjay bagus", "keren2",
+    "auto like", "auto respect", "respect banget", "cihuy",
+    "positive vibes", "terthebest", "keren pol", "bagus pol",
+    
+    // Emoji-based (positive)
+    "❤️", "😍", "🔥", "✨", "💯", "👍", "👏", "😁", "🤩", "💖",
+    "💕", "💗", "🌟", "🙌", "😎",
+
+    // Praise phrases (English)
+    "i love this", "i like this", "this is amazing", "this is great",
+    "you did great", "you did amazing", "i'm impressed",
+    "love your work", "proud of you", "excellent work",
+
+    // Praise phrases (Indonesia)
+    "aku suka ini", "suka banget", "bagus banget sumpah",
+    "keren banget sumpah", "keren banget parah",
+    "ini bagus banget", "lu keren banget", "kerja bagus",
+    "bangga banget", "niat banget sumpah",
   ];
+
   const negativeWords = [
-    "hate",
-    "bad",
-    "terrible",
-    "awful",
-    "worst",
-    "horrible",
-    "poor",
-    "disappointing",
-    "trash",
-    "cringe",
+    // English - strong negative
+    "hate", "bad", "terrible", "awful", "worst", "horrible", "poor",
+    "disappointing", "trash", "lame", "cringe", "garbage", "pathetic",
+    "sucks", "ugly", "fake", "scam", "broken", "useless", "annoying",
+    "stupid", "idiot", "dumb", "moron", "loser", "nonsense",
+    "worthless", "disgusting", "weak",
+
+    // English - profanity / aggressive insults
+    "fuck", "fucking", "fuck off", "shit", "bullshit", "holy shit",
+    "piece of shit", "bastard", "asshole", "dick", "dickhead",
+    "motherfucker", "son of a bitch", "bitch", "witch", "piss off",
+    "jerk", "crap",
+
+    // Indonesian - strong negative
+    "buruk", "jelek", "parah", "ampas", "sampah", "mengecewakan",
+    "payah", "ngaco", "lemot", "norak", "abal", "hoax",
+    "berantakan", "zonk", "ngecewain", "gagal total",
+
+    // Indonesian - kata kasar / penghinaan
+    "anjing", "anjir", "anjrit", "bangsat", "tai", "tai banget",
+    "kampret", "keparat", "kontol", "memek", "goblok", "goblok banget",
+    "tolol", "idiot", "bodoh", "bego", "bego banget", "dungu",
+    "setan", "iblis", "gila lu", "brengsek", "laknat",
+    "pecundang", "pantek", "babi", "asw", "asu", "jembut",
+    "ngentot", "ngentod", "ngentot lu", "tai kucing",
+    "sialan", "tai lah", "mampus", "kubunuh", "bunuh", "anj", "babi", "tolol",
+    "gblg", "kontol", "gila"  // dipakai dalam konteks figuratif online
   ];
+
 
   const lowerText = text.toLowerCase();
   const hasPositive = positiveWords.some((word) => lowerText.includes(word));
