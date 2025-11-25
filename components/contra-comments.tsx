@@ -216,9 +216,17 @@ export function ContraComments({ data }: ContraCommentsProps) {
                             </Avatar>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 mb-1">
-                                <span className="font-medium text-sm text-card-foreground truncate">
+                                {/* <span className="font-medium text-sm text-card-foreground truncate">
                                   {comment.user?.nickname || "Anonymous"}
-                                </span>
+                                </span> */}
+                                <div className="flex flex-col mr-2">
+                                  <span className="text-sm font-bold text-card-foreground">
+                                    {comment.user?.nickname}
+                                  </span>
+                                  <span className="text-xs font-normal text-muted-foreground">
+                                    @{comment.user?.unique_id}
+                                  </span>
+                                </div>
                                 <Badge
                                   variant="outline"
                                   className="bg-red-500/10 text-red-500 border-red-500/20 text-xs"

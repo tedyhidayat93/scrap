@@ -17,6 +17,7 @@ interface AccountRiskAnalysisProps {
 
 interface AccountRisk {
   userId: string;
+  nickname?: string;
   username: string;
   avatar: string;
   riskScore: number;
@@ -65,8 +66,10 @@ export function AccountRiskAnalysis({ data }: AccountRiskAnalysisProps) {
         Array.isArray(userComments) && userComments.length > 0
           ? userComments[0]
           : null;
+      const nickname =
+        first?.user?.nickname || "-";
       const username =
-        first?.user?.unique_id || first?.user?.nickname || "Unknown User";
+        first?.user?.unique_id || "-";
       const avatar =
         first?.user?.avatar_thumb?.url_list?.[0] || "/placeholder.svg";
 
@@ -131,6 +134,7 @@ export function AccountRiskAnalysis({ data }: AccountRiskAnalysisProps) {
 
       return {
         userId,
+        nickname,
         username,
         avatar,
         riskScore: Math.min(Math.round(riskScore), 100),
@@ -233,9 +237,18 @@ export function AccountRiskAnalysis({ data }: AccountRiskAnalysisProps) {
                       </AvatarFallback>
                     </Avatar>
                     <div className="text-center space-y-1 w-full">
-                      <p className="text-xs font-medium text-card-foreground truncate">
+                      {/* <p className="text-xs font-medium text-card-foreground truncate">
                         {account.username}
-                      </p>
+                      </p> */}
+                      <div className="flex flex-col mr-2">
+                        <span className="text-sm font-bold text-card-foreground">
+                          {account.nickname}
+                        </span>
+                        <span className="text-xs font-normal text-muted-foreground">
+                          @{account.username}
+                        </span>
+                      </div>
+
                       <Badge
                         variant="outline"
                         className={`${

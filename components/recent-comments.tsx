@@ -17,6 +17,12 @@ const sentimentOptions = [
   { value: "negative", label: "😠 Negative" },
 ];
 
+const accountTypeOptions = [
+  { value: "all", label: "All Accounts" },
+  { value: "bot", label: "🤖 Bot" },
+  { value: "real", label: "👤 Real Account" },
+];
+
 // ... [previous imports and formatTimeAgo function]
 function formatTimeAgo(timestamp: string | number): string {
   const now = Date.now();
@@ -57,12 +63,13 @@ export function RecentComments({
   const [pageSize, setPageSize] = useState(10);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedSentiment, setSelectedSentiment] = useState("all");
+  const [accountType, setAccountType] = useState("all");
   const [isSearching, setIsSearching] = useState(false);
 
 
 
 
-  // Filter comments based on search term and sentiment
+  // Filter comments based on search term, sentiment, and bot status
   const filteredComments = useMemo(() => {
     return comments.filter(comment => {
       const matchesSearch = 
@@ -74,9 +81,16 @@ export function RecentComments({
         selectedSentiment === "all" || 
         comment.sentiment === selectedSentiment;
       
-      return matchesSearch && matchesSentiment;
+      // Filter by account type (bot/real)
+      const isBot = comment.isBot || comment.botScore >= 4;
+      const matchesAccountType = 
+        accountType === "all" || 
+        (accountType === "bot" && isBot) || 
+        (accountType === "real" && !isBot);
+      
+      return matchesSearch && matchesSentiment && matchesAccountType;
     });
-  }, [comments, searchTerm, selectedSentiment]);
+  }, [comments, searchTerm, selectedSentiment, accountType]);
 
   const total = filteredComments.length;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
@@ -107,6 +121,7 @@ export function RecentComments({
   const resetFilters = () => {
     setSearchTerm("");
     setSelectedSentiment("all");
+    setAccountType("all");
     // No need to call handleSearch here as the state updates will trigger it
   };
 
@@ -153,21 +168,34 @@ export function RecentComments({
                 </SelectContent>
               </Select>
             </div>
-            {(searchTerm || selectedSentiment !== "all") && (
+            <div className="border border-primary/50 hover:border-primary/70 focus:border-primary">
+              <Select 
+                value={accountType}
+                onValueChange={setAccountType}
+                disabled={isSearching}
+              >
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue placeholder="Account Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {accountTypeOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {(searchTerm || accountType !== "all" || selectedSentiment !== "all") && (
               <Button
                 type="button"
-                variant="outline"
+                variant="destructive"
                 onClick={resetFilters}
                 disabled={isSearching}
               >
                 <X className="h-4 w-4 mr-2" />
                 Reset
               </Button>
-            )}
-            {isSearching && (
-              <div className="flex items-center justify-center ml-2">
-                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-              </div>
             )}
           </div>
         </div>

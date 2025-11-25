@@ -321,9 +321,18 @@ export function CounterNarrativeComments({
                       </Avatar>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                          <span className="font-medium text-sm text-card-foreground truncate">
-                            {comment.user?.nickname || "Unnamed"}
-                          </span>
+                          {/* <span className="font-medium text-sm text-card-foreground truncate">
+                            {comment.user?.nickname || comment.user?.unique_id || "-"}
+                          </span> */}
+                          <div className="flex flex-col mr-2">
+                            <span className="text-sm font-bold text-card-foreground">
+                              {comment.user?.nickname}
+                            </span>
+                            <span className="text-xs font-normal text-muted-foreground">
+                              @{comment.user?.unique_id}
+                            </span>
+                          </div>
+
                           <Badge
                             variant="outline"
                             className="bg-chart-5/10 text-chart-5 border-chart-5/20 text-xs"
