@@ -177,7 +177,7 @@ export function RecentComments({
         <div className="space-y-4">
           {pageComments.map((comment: any, index: number) => (
             <CommentItem 
-              key={comment.cid || index} 
+              key={index} 
               comment={comment} 
               index={index} 
             />
@@ -245,9 +245,9 @@ function LoadingState() {
 // Extracted Comment Item Component
 function CommentItem({ comment, index }: { comment: any; index: number }) {
   const commentText = comment.text || "No comment text";
-  const userName =
+  const nickname = comment.user?.nickname || '-';
+  const userName = 
     comment.user?.unique_id ||
-    comment.user?.nickname ||
     `User ${index + 1}`;
   const userAvatar =
     comment.user?.avatar_thumb?.url_list?.[0] || "/placeholder.svg";
@@ -262,12 +262,17 @@ function CommentItem({ comment, index }: { comment: any; index: number }) {
         <AvatarImage src={userAvatar} alt={userName} />
         <AvatarFallback>{userName.charAt(0).toUpperCase()}</AvatarFallback>
       </Avatar>
-      <div className="flex-1 space-y-2">
+      <div className="flex-1 space-y-3">
         <div className="flex items-center justify-between gap-2 flex-wrap">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-card-foreground">
-              {userName}
-            </span>
+            <div className="flex flex-col mr-2">
+              <span className="text-sm font-bold text-card-foreground">
+                {nickname}
+              </span>
+              <span className="text-xs font-normal text-muted-foreground">
+                @{userName}
+              </span>
+            </div>
             <Badge
               variant="secondary"
               className="bg-chart-1 text-primary-foreground"
@@ -290,18 +295,20 @@ function CommentItem({ comment, index }: { comment: any; index: number }) {
         <p className="text-sm text-card-foreground leading-relaxed">
           {commentText}
         </p>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 border-t border-border pt-2 ">
           <Badge
             variant="outline"
             className={
               sentiment === "positive"
-                ? "bg-chart-4/10 text-chart-4 border-chart-4/20 text-capiatlize"
+                ? "bg-green-600/50 text-chart-4 border-chart-4/20"
                 : sentiment === "negative"
-                ? "bg-chart-5/10 text-chart-5 border-chart-5/20 text-capiatlize"
-                : "bg-chart-3/10 text-chart-3 border-chart-3/20 text-capiatlize"
+                ? "bg-red-600/50 text-chart-5 border-chart-5/20"
+                : "bg-chart-3/10 text-chart-3 border-chart-3/20"
             }
           >
-            {sentiment}
+            <span style={{textTransform: 'capitalize'}}>
+              {sentiment}
+            </span>
           </Badge>
           {comment.digg_count > 0 && (
             <span className="text-xs text-muted-foreground">
