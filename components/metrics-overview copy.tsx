@@ -72,44 +72,40 @@ export function MetricsOverview({ data }: MetricsOverviewProps) {
     });
   };
 
-  // Calculate metrics
-  const botPercentage = totalComments > 0 ? (botComments / totalComments) * 100 : 0;
-  const realPercentage = totalComments > 0 ? (realComments / totalComments) * 100 : 0;
-  
   const baseMetrics: Metric[] = [
     {
       title: "Total Comments",
       value: isLoading ? "..." : totalComments.toLocaleString(),
-      change: "0%",
+      change: "+12.5%",
       trend: "up",
       icon: MessageSquare,
     },
     {
-      title: "Real Comments",
+      title: "Total Real Comment",
       value: isLoading ? "..." : realComments.toLocaleString(),
-      change: `${realPercentage.toFixed(0)}%`,
-      trend: realPercentage > 50 ? "up" : "down",
+      change: "+14.2%",
+      trend: "up",
       icon: MessageCircleCheck,
     },
     {
       title: "Total Users",
       value: isLoading ? "..." : uniqueUsers.toLocaleString(),
-      change: "0%",
+      change: "+2.1%",
       trend: "up",
       icon: Users,
     },
     {
-      title: "Bot Accounts",
+      title: "Total Bot Account",
       value: isLoading ? "..." : botComments.toLocaleString(),
-      change: `${botPercentage.toFixed(0)}%`,
-      trend: botPercentage > 50 ? "up" : "down",
+      change: "-3.2%",
+      trend: "down",
       icon: Bot,
     },
     {
-      title: "Real Accounts",
+      title: "Total Real Account",
       value: isLoading ? "..." : realAccounts.toLocaleString(),
-      change: `${realPercentage.toFixed(0)}%`,
-      trend: realAccounts > botComments ? "up" : "down",
+      change: "+5.8%",
+      trend: "up",
       icon: UserCheck,
     },
   ];
@@ -156,7 +152,7 @@ export function MetricsOverview({ data }: MetricsOverviewProps) {
             title: "Video Created",
             value: isLoading ? "..." : formatDate(videoStats.createdAt),
             change: "",
-            trend: "up",
+            trend: "neutral",
             icon: Calendar,
             hideChange: true,
           },
@@ -166,7 +162,7 @@ export function MetricsOverview({ data }: MetricsOverviewProps) {
   const metrics = [...baseMetrics, ...keywordMetrics, ...videoMetrics];
 
   return (
-    <div className="grid gap-3 grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+    <div className="grid gap-3 grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
       {metrics.map((metric) => {
         const Icon = metric.icon;
         const TrendIcon = metric.trend === "up" ? ArrowUp : ArrowDown;

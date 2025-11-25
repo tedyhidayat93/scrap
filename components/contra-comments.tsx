@@ -101,7 +101,7 @@ export function ContraComments({ data }: ContraCommentsProps) {
   return (
     <Card className="bg-card py-5 border-border">
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex items-start justify-between">
           <div>
             <CardTitle className="text-lg font-semibold text-card-foreground flex items-center gap-2">
               <ThumbsDown className="h-5 w-5 text-red-500" />
@@ -111,16 +111,7 @@ export function ContraComments({ data }: ContraCommentsProps) {
               Comments opposing the video narrative
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            {displayData && (
-              <Badge
-                variant="outline"
-                className="bg-red-500/10 text-red-500 border-red-500/20"
-              >
-                {displayData.contraComments?.length || 0} comments (
-                {contraPercentage}%)
-              </Badge>
-            )}
+          <div className="flex items-end flex-col gap-2">
             <Button
               variant="outline"
               size="sm"
@@ -132,6 +123,15 @@ export function ContraComments({ data }: ContraCommentsProps) {
               />
               {aiContraData ? "Re-analyze" : "Enhance"} with AI
             </Button>
+            {displayData && (
+              <Badge
+                variant="outline"
+                className="bg-red-500/10 text-red-500 border-red-500/20"
+              >
+                {displayData.contraComments?.length || 0} comments (
+                {contraPercentage}%)
+              </Badge>
+            )}
           </div>
         </div>
       </CardHeader>
@@ -216,9 +216,17 @@ export function ContraComments({ data }: ContraCommentsProps) {
                             </Avatar>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 mb-1">
-                                <span className="font-medium text-sm text-card-foreground truncate">
+                                {/* <span className="font-medium text-sm text-card-foreground truncate">
                                   {comment.user?.nickname || "Anonymous"}
-                                </span>
+                                </span> */}
+                                <div className="flex flex-col mr-2">
+                                  <span className="text-sm font-bold text-card-foreground">
+                                    {comment.user?.nickname}
+                                  </span>
+                                  <span className="text-xs font-normal text-muted-foreground">
+                                    @{comment.user?.unique_id}
+                                  </span>
+                                </div>
                                 <Badge
                                   variant="outline"
                                   className="bg-red-500/10 text-red-500 border-red-500/20 text-xs"

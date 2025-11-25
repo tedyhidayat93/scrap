@@ -149,7 +149,7 @@ export function NarrativeDetection({ data }: NarrativeDetectionProps) {
   return (
     <Card className="bg-card py-5 border-border">
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex items-start justify-between">
           <div>
             <CardTitle className="text-lg font-semibold text-card-foreground flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-primary" />
@@ -175,7 +175,7 @@ export function NarrativeDetection({ data }: NarrativeDetectionProps) {
       <CardContent>
         {isLoading || isAnalyzing ? (
           <div className="h-[200px] flex items-center justify-center text-muted-foreground">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center start-2">
               <RefreshCw className="h-5 w-5 animate-spin" />
               {isAnalyzing
                 ? "AI is analyzing narratives..."

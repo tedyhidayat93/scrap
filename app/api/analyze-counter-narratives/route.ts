@@ -51,37 +51,38 @@ export async function POST(req: Request) {
       return Response.json({ error: "No comments provided" }, { status: 400 });
     }
 
-    // Take maximum 100 comments for AI
+    // Take maximum 100 comments negative for AI
     const sampleComments = comments
-      .slice(0, 100)
-      .map((c: any, idx: number) => `[${idx}] ${c.text}`)
-      .join("\n");
+  .filter((c: any) => c.sentiment === "negative") // Only get negative comments
+  .slice(0, 100) // Take up to 100 negative comments
+  .map((c: any, idx: number) => `[${idx}] ${c.text}`)
+  .join("\n");
 
     const prompt = `
-Analyze these TikTok comments and identify which ones contradict or challenge the main narrative in an elegant and factual manner.
+      Analyze these TikTok comments and identify which ones contradict or challenge the main narrative in an elegant and factual manner.
 
-Main Narrative:
-${mainNarrative || "The dominant opinion in the comments"}
+      Main Narrative:
+      ${mainNarrative || "The dominant opinion in the comments"}
 
-Comments:
-${sampleComments}
+      Comments:
+      ${sampleComments}
 
-Your tasks:
-1. Identify comments that contradict, challenge, or question the main narrative.
-2. For each identified comment, generate:
-   - A refined counter-narrative sentence (field: "word") that is:
-     - Elegant, non-aggressive, and factual  
-     - Written in a formal tone and easy to understand  
-     - At least 10 words  
-     - Written in the SAME LANGUAGE as the original comment  
-3. Also include:
-   - The reason why the comment is considered counter-narrative
-   - A counterScore (1-10)
-   - Related keywords
-4. Return ONLY valid JSON matching this schema:
-${JSON.stringify(counterNarrativeSchema.shape, null, 2)}
+      Your tasks:
+      1. Identify comments that contradict, challenge, or question the main narrative.
+      2. For each identified comment, generate:
+        - A refined counter-narrative sentence (field: "word") that is:
+          - Elegant, non-aggressive, and factual  
+          - Written in a formal tone and easy to understand  
+          - At least 10 words  
+          - Written in the SAME LANGUAGE as the original comment  
+      3. Also include:
+        - The reason why the comment is considered counter-narrative
+        - A counterScore (1-10)
+        - Related keywords
+      4. Return ONLY valid JSON matching this schema:
+      ${JSON.stringify(counterNarrativeSchema.shape, null, 2)}
 
-The response must be valid JSON only, no other text.`;
+      The response must be valid JSON only, no other text.`;
 
     try {
       const response = await askOllama(process.env.OLLAMA_MODEL_LLM!, prompt);
