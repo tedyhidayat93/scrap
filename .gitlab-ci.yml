@@ -1,0 +1,99 @@
+stages:
+  - build
+  - test
+  - deploy
+
+variables:
+  CI_REGISTRY: gitlab.optimasi.ai:5050
+  CI_REGISTRY_IMAGE: gitlab.optimasi.ai:5050/optimasi-services/comment-scraper-fe
+  DOCKER_IMAGE: $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG
+  DOCKER_IMAGE_LATEST: $CI_REGISTRY_IMAGE:latest
+  DOCKER_DRIVER: overlay2
+
+# Use Docker-in-Docker for building images
+.docker_build:
+  image: docker:24-cli
+  services:
+    - docker:24-dind
+  before_script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+
+# Build stage - Build and push Docker image
+build:
+  extends: .docker_build
+  stage: build
+  tags:
+    - server-surabaya-shell
+  script:
+    - echo "Building Docker image..."
+    - docker build -t $DOCKER_IMAGE -t $DOCKER_IMAGE_LATEST .
+    - echo "Pushing Docker image to registry..."
+    - docker push $DOCKER_IMAGE
+    - docker push $DOCKER_IMAGE_LATEST
+  only:
+    - dev
+    - tags
+
+# Test stage - Run tests (optional, customize based on your needs)
+test:
+  image: node:20-alpine
+  stage: test
+  tags:
+    - server-surabaya-shell
+  before_script:
+    - corepack enable
+    - corepack prepare pnpm@10.14.0 --activate
+    - pnpm install --frozen-lockfile
+  script:
+    - echo "Running tests..."
+    # Uncomment when you have tests
+    # - pnpm run test
+    - echo "No tests configured yet"
+  only:
+    - main
+    - develop
+    - merge_requests
+
+# Deploy to Production
+deploy_production:
+  extends: .docker_build
+  stage: deploy
+  tags:
+    - server-surabaya-shell
+  needs:
+    - build
+  script:
+    - echo "Deploying to production server..."
+    - cp docker-compose.yml /opt/comment-scraper-fe/
+    - cd /opt/comment-scraper-fe
+    - sudo docker compose pull
+    - sudo docker compose up -d --force-recreate
+    - sudo docker image prune -f || true
+    - echo "Deployment completed successfully!"
+  environment:
+    name: production
+    url: https://scrapy.optimasi.ai
+  only:
+    - dev
+
+# Deploy to Staging
+deploy_staging:
+  extends: .docker_build
+  stage: deploy
+  tags:
+    - server-surabaya-shell
+  needs:
+    - build
+  script:
+    - echo "Deploying to staging server..."
+    - cp docker-compose.yml /opt/comment-scraper-fe-staging/
+    - cd /opt/comment-scraper-fe-staging
+    - sudo docker compose pull
+    - sudo docker compose up -d --force-recreate
+    - sudo docker image prune -f || true
+    - echo "Staging deployment completed!"
+  environment:
+    name: staging
+    url: https://staging.your-domain.com
+  only:
+  
