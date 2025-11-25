@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
+import { generateObject } from "ai"
 import { z } from "zod"
-import { askOllama } from "@/lib/ollama-client"
+import { openai } from "@ai-sdk/openai"
 
 const IntelligenceSchema = z.object({
   threatLevel: z.object({
@@ -46,10 +47,12 @@ async function retryWithBackoff<T>(fn: () => Promise<T>, maxRetries = 3, initial
     } catch (error: any) {
       lastError = error
 
-      const isRetryable = 
-        error?.message?.includes("network") || 
-        error?.message?.includes("timeout") ||
-        error?.message?.includes("connection")
+      const isRetryable =
+        error?.status === 502 ||
+        error?.status === 503 ||
+        error?.status === 504 ||
+        error?.message?.includes("502") ||
+        error?.message?.includes("Bad Gateway")
 
       if (!isRetryable || attempt === maxRetries - 1) {
         throw error
@@ -64,30 +67,16 @@ async function retryWithBackoff<T>(fn: () => Promise<T>, maxRetries = 3, initial
   throw lastError
 }
 
-function extractJsonFromResponse(response: string): any {
-  try {
-    // Try to extract JSON from code blocks first
-    const jsonMatch = response.match(/```(?:json)?\n([\s\S]*?)\n```/) || 
-                     response.match(/{[\s\S]*}/)
-    
-    if (!jsonMatch) {
-      throw new Error("No JSON found in response")
-    }
-
-    const jsonString = jsonMatch[0].replace(/```(?:json)?/g, '').trim()
-    return JSON.parse(jsonString)
-  } catch (e) {
-    console.error("Failed to parse JSON from response:", e)
-    throw new Error("Invalid JSON response from AI")
-  }
-}
-
 export async function POST(request: Request) {
   try {
     const { comments, sentimentCounts } = await request.json()
 
     if (!comments || !Array.isArray(comments) || comments.length === 0) {
       return NextResponse.json({ error: "Comments array is required" }, { status: 400 })
+    }
+
+    if (!process.env.OPENAI_API_KEY) {
+      return NextResponse.json({ error: "OpenAI API key not configured" }, { status: 500 })
     }
 
     const sampleComments = comments.slice(0, 100)
@@ -100,89 +89,66 @@ export async function POST(request: Request) {
 
     const prompt = `You are a cybersecurity intelligence analyst. Analyze these ${totalComments} social media comments and extract actionable intelligence.
 
-    SENTIMENT DISTRIBUTION:
-    - Positive: ${positivePercent}%
-    - Negative: ${negativePercent}%
-    - Neutral: ${neutralPercent}%
+SENTIMENT DISTRIBUTION:
+- Positive: ${positivePercent}%
+- Negative: ${negativePercent}%
+- Neutral: ${neutralPercent}%
 
-    COMMENTS:
-    ${commentTexts}
+COMMENTS:
+${commentTexts}
 
-    Provide a comprehensive intelligence assessment following this JSON schema exactly:
+Provide a comprehensive intelligence assessment including:
 
-    {
-      "threatLevel": {
-        "level": "low|medium|high|critical",
-        "description": "string",
-        "indicators": ["string"]
-      },
-      "keyEntities": {
-        "people": ["string"],
-        "organizations": ["string"],
-        "locations": ["string"]
-      },
-      "behavioralPatterns": [{
-        "pattern": "string",
-        "frequency": 0-100,
-        "significance": "string"
-      }],
-      "emergingTrends": [{
-        "trend": "string",
-        "momentum": "rising|stable|declining",
-        "description": "string",
-        "keywords": ["string"]
-      }],
-      "recommendations": [{
-        "action": "string",
-        "priority": "low|medium|high",
-        "rationale": "string"
-      }]
-    }
+1. THREAT LEVEL: Assess potential risks (disinformation, harassment, manipulation, polarization)
+2. KEY ENTITIES: Extract notable people, organizations, and locations mentioned
+3. BEHAVIORAL PATTERNS: Identify coordinated behavior, bot activity, or unusual patterns
+4. EMERGING TRENDS: Detect rising topics or shifting narratives
+5. RECOMMENDATIONS: Suggest monitoring actions or intervention strategies
 
-    Focus on:
-    - Information integrity (fake news, manipulation)
-    - Community safety (harassment, threats)
-    - Narrative warfare (coordinated messaging)
-    - Anomalous activity (bot networks, spam)
-    - Sentiment shifts and polarization
-
-    Return ONLY valid JSON, no other text.`
+Focus on:
+- Information integrity (fake news, manipulation)
+- Community safety (harassment, threats)
+- Narrative warfare (coordinated messaging)
+- Anomalous activity (bot networks, spam)
+- Sentiment shifts and polarization`
 
     try {
       console.log(`[v0] Analyzing intelligence from ${sampleComments.length} comments...`)
-      console.log(`prompt...:`, prompt)
 
-      const response = await retryWithBackoff(async () => {
-        const result = await askOllama(process.env.OLLAMA_MODEL_LLM!, prompt)
-        try {
-          return extractJsonFromResponse(result)
-        } catch (e) {
-          console.error("Failed to parse AI response:", e)
-          throw new Error("Invalid response format from AI")
-        }
+      const { object } = await retryWithBackoff(async () => {
+        return await generateObject({
+          model: openai("gpt-4o-mini"),
+          schema: IntelligenceSchema,
+          prompt,
+          temperature: 0.3,
+        })
       })
 
-      const result = IntelligenceSchema.safeParse(response)
-      
-      if (!result.success) {
-        console.error("[v0] Invalid response format from Ollama:", result.error)
-        throw new Error("Invalid response format from AI")
+      console.log(`[v0] Intelligence analysis complete`)
+
+      return NextResponse.json(object)
+    } catch (aiError: any) {
+      console.error("[v0] AI Error:", aiError?.message)
+
+      if (aiError?.status === 502 || aiError?.message?.includes("502")) {
+        return NextResponse.json({ error: "OpenAI server temporarily unavailable. Please try again." }, { status: 502 })
       }
 
-      console.log(`[v0] Intelligence analysis complete`)
-      return NextResponse.json(result.data)
-    } catch (error: any) {
-      console.error(`[v0] Error in intelligence analysis:`, error.message)
-      return NextResponse.json(
-        { error: error.message || "Failed to analyze intelligence" },
-        { status: 500 }
-      )
+      if (aiError?.status === 429 || aiError?.message?.includes("quota")) {
+        return NextResponse.json({ error: "OpenAI quota exceeded. Please check your billing." }, { status: 429 })
+      }
+
+      if (aiError?.status === 401) {
+        return NextResponse.json({ error: "OpenAI authentication failed. Verify API key." }, { status: 401 })
+      }
+
+      throw aiError
     }
   } catch (error) {
-    console.error(`[v0] Error in intelligence analysis:`, error)
+    console.error(`[v0] Error analyzing intelligence:`, error)
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to process request" },
-      { status: 500 }
+      { error: error instanceof Error ? error.message : "Failed to analyze intelligence" },
+      { status: 500 },
     )
   }
 }

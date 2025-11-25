@@ -3,6 +3,8 @@ export async function POST(req: Request) {
   try {
     const { model, prompt, stream = false } = await req.json();
 
+    // const res = await fetch("https://ollama.optimasi.ai/api/generate", {
+    // const res = await fetch("https://ollama2.tuselak.com/api/tags", {
     const res = await fetch("https://ollama.optimasi.ai/api/generate", {
       method: "POST",
       headers: {

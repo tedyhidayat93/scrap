@@ -1,16 +1,13 @@
-// lib/ollamaClient.ts
-export async function askOllama(model: string, prompt: string, stream = false) {
-  const res = await fetch("/api/ollama", {
+export async function askOllama(model: string, prompt: string) {
+
+  console.log("[v0] Asking Ollama with model:", model)
+  console.log("[v0] Asking Ollama with prompt:", prompt)
+  const res = await fetch("https://ollama.optimasi.ai/api/generate", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ model, prompt, stream }),
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ model, prompt, stream: false }),
   });
 
-  if (!res.ok) {
-    throw new Error(`Client request failed: ${res.status}`);
-  }
-
-  return res.json();
+  const data = await res.json();
+  return data.response;
 }

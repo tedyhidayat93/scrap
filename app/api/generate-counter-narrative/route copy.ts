@@ -1,18 +1,40 @@
 import { NextResponse } from "next/server";
 import fs from "fs/promises";
 import path from "path";
-import { askOllama } from "@/lib/ollama-client";
 
-async function callOllama(prompt: string) {
-  const model = process.env.OLLAMA_MODEL_LLM || "llama3";
-  try {
-    const response = await askOllama(model, prompt);
-    return response;
-  } catch (error: unknown) {
-    console.error("Ollama API error:", error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-    throw new Error(`Failed to generate counter narrative: ${errorMessage}`);
+async function callOpenAI(prompt: string) {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) throw new Error("OPENAI_API_KEY not set");
+
+  const res = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "gpt-4o-mini",
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are a professional communications analyst and headline writer. Produce concise JSON according to the user's instructions.",
+        },
+        { role: "user", content: prompt },
+      ],
+      temperature: 0.3,
+      max_tokens: 800,
+    }),
+  });
+
+  if (!res.ok) {
+    const txt = await res.text();
+    throw new Error(`OpenAI error: ${res.status} ${txt}`);
   }
+
+  const data = await res.json();
+  const content = data.choices?.[0]?.message?.content;
+  return content;
 }
 
 export async function POST(req: Request) {
@@ -32,31 +54,21 @@ export async function POST(req: Request) {
       tpl = await fs.readFile(templatePath, "utf-8");
     } catch (err) {
       console.warn("Prompt template not found, using inline fallback");
-      tpl = `Anda adalah seorang analis komunikasi strategis dan penulis berita profesional.
-Tugas Anda adalah membuat satu rekomendasi judul berita yang berfungsi sebagai _counter narrative_ untuk melawan narasi negatif atau menyesatkan.
-Topik yang dianalisis: "$video|username|keyword"
-Formatkan respons dalam JSON dengan struktur berikut:
-{"results": ["<list judul >"]}`;
+      tpl = `Anda adalah seorang analis komunikasi strategis dan penulis berita profesional.\nTugas Anda adalah membuat satu rekomendasi judul berita yang berfungsi sebagai _counter narrative_ untuk melawan narasi negatif atau menyesatkan.\nTopik yang dianalisis:\n\"$video|username|keyword\"\nFormatkan respons dalam JSON dengan struktur berikut:\n{"results": ["<list judul >"]}`;
     }
 
     const prompt = tpl.replace("$video|username|keyword", topic);
 
-    const text = await callOllama(prompt);
+    const text = await callOpenAI(prompt);
 
     let results: string[] = [];
     if (!text) throw new Error("Empty response from model");
 
     // Try parse as JSON (model instructed to return JSON)
     try {
-      // Extract JSON from markdown code block if present
-      const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
-      const jsonString = jsonMatch ? jsonMatch[1] : text;
-      
-      const parsed = JSON.parse(jsonString);
+      const parsed = JSON.parse(text);
       if (Array.isArray(parsed.results)) {
         results = parsed.results.map((r: any) => String(r).trim());
-      } else if (Array.isArray(parsed)) {
-        results = parsed.map((r: any) => String(r).trim());
       }
     } catch (err) {
       // Fallback: split by newlines and strip bullets

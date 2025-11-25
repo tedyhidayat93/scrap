@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server"
-import { generateObject } from "ai"
 import { z } from "zod"
-import { openai } from "@ai-sdk/openai"
+import { askOllama } from "@/lib/ollama-client"
 
 const ProContraCommentSchema = z.object({
   index: z.number().describe("Index of the comment (1-based)"),
@@ -27,20 +26,16 @@ async function retryWithBackoff<T>(fn: () => Promise<T>, maxRetries = 3, initial
     } catch (error: any) {
       lastError = error
 
-      // Check if it's a retryable error (502, 503, 504, network errors)
-      const isRetryable =
-        error?.status === 502 ||
-        error?.status === 503 ||
-        error?.status === 504 ||
-        error?.message?.includes("502") ||
-        error?.message?.includes("Bad Gateway") ||
-        error?.message?.includes("network")
+      // Check if it's a retryable error (network errors, etc.)
+      const isRetryable = error?.message?.includes("network") || 
+                         error?.message?.includes("timeout") ||
+                         error?.message?.includes("connection")
 
       if (!isRetryable || attempt === maxRetries - 1) {
         throw error
       }
 
-      // Exponential backoff: wait longer between each retry
+      // Exponential backoff
       const delay = initialDelay * Math.pow(2, attempt)
       console.log(`[v0] Retry attempt ${attempt + 1}/${maxRetries} after ${delay}ms due to: ${error?.message}`)
       await new Promise((resolve) => setTimeout(resolve, delay))
@@ -63,66 +58,67 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Type must be 'pro' or 'contra'" }, { status: 400 })
     }
 
-    if (!process.env.OPENAI_API_KEY) {
-      console.error("[v0] OpenAI API key not configured")
-      return NextResponse.json(
-        { error: "OpenAI API key not configured. Please add OPENAI_API_KEY to environment variables." },
-        { status: 500 },
-      )
-    }
-
-    console.log("[v0] OpenAI API key is configured:", process.env.OPENAI_API_KEY?.substring(0, 10) + "...")
+    console.log(`[v0] Analyzing ${type} comments with Ollama...`)
+    console.log(`[v0] Comment count: ${comments.length}`)
 
     const sampleComments = comments.slice(0, 100)
     const commentTexts = sampleComments.map((c, i) => `${i + 1}. ${c.text}`).join("\n")
 
-    const prompt =
-      type === "pro"
-        ? `Analyze these comments and identify which ones SUPPORT or AGREE with the video's narrative/message.
+    const prompt = `Analyze these comments and identify which ones ${
+      type === "pro" ? "SUPPORT or AGREE" : "OPPOSE or DISAGREE"
+    } with the video's narrative/message.
 
-Pro comments are those that:
-- Express agreement, support, or positive reinforcement
-- Praise the content or creator
-- Share similar experiences or viewpoints
-- Defend the video's message
-- Show enthusiasm or appreciation
+      ${
+        type === "pro"
+          ? `Pro comments are those that:
+      - Express agreement, support, or positive reinforcement
+      - Praise the content or creator
+      - Share similar experiences or viewpoints
+      - Defend the video's message
+      - Show enthusiasm or appreciation`
+          : `Contra comments are those that:
+      - Express disagreement or criticism
+      - Challenge the video's claims or message
+      - Point out flaws or inconsistencies
+      - Offer opposing viewpoints
+      - Show skepticism or doubt`
+      }
 
-Comments:
-${commentTexts}
+      Comments:
+      ${commentTexts}
 
-Return the pro comments with their index number (from the list above), strength score (1-10), and brief explanation.
-Also provide a summary with total count, percentage, and up to 5 common themes.`
-        : `Analyze these comments and identify which ones OPPOSE or DISAGREE with the video's narrative/message.
+      Return the ${
+            type
+          } comments with their index number (from the list above), strength score (1-10), and brief explanation.
+      Also provide a summary with total count, percentage, and up to 5 common ${type === "pro" ? "themes" : "objections"}.
 
-Contra comments are those that:
-- Express disagreement or criticism
-- Challenge the video's claims or message
-- Point out flaws or inconsistencies
-- Offer opposing viewpoints
-- Show skepticism or doubt
-
-Comments:
-${commentTexts}
-
-Return the contra comments with their index number (from the list above), strength score (1-10), and brief explanation.
-Also provide a summary with total count, percentage, and up to 5 common objections.`
+      Format your response as valid JSON matching this schema:
+      ${JSON.stringify(ProContraAnalysisSchema.shape, null, 2)}`
 
     try {
-      console.log(`[v0] Analyzing ${type} comments with OpenAI...`)
-      console.log(`[v0] Using model: gpt-4o-mini`)
-      console.log(`[v0] Comment count: ${sampleComments.length}`)
-
-      const { object } = await retryWithBackoff(async () => {
-        return await generateObject({
-          model: openai("gpt-4o-mini"),
-          schema: ProContraAnalysisSchema,
-          prompt,
-        })
+      const response = await retryWithBackoff(async () => {
+        const result = await askOllama(process.env.OLLAMA_MODEL_LLM!, prompt)
+        try {
+          // Try to extract JSON from the response
+          const jsonMatch = result.match(/```json\n([\s\S]*?)\n```/) || result.match(/{[\s\S]*}/)
+          const jsonString = jsonMatch ? jsonMatch[0].replace(/```(json)?/g, '').trim() : result
+          return JSON.parse(jsonString)
+        } catch (e) {
+          console.error("Failed to parse Ollama response:", e)
+          throw new Error("Invalid JSON response from Ollama")
+        }
       })
 
-      console.log(`[v0] Successfully analyzed ${object.comments.length} ${type} comments`)
+      const result = ProContraAnalysisSchema.safeParse(response)
+      
+      if (!result.success) {
+        console.error("[v0] Invalid response format from Ollama:", result.error)
+        throw new Error("Invalid response format from AI")
+      }
 
-      const enrichedComments = object.comments
+      console.log(`[v0] Successfully analyzed ${result.data.comments.length} ${type} comments`)
+
+      const enrichedComments = result.data.comments
         .map((comment) => {
           const originalComment = sampleComments[comment.index - 1]
           if (!originalComment) {
@@ -144,74 +140,31 @@ Also provide a summary with total count, percentage, and up to 5 common objectio
       return NextResponse.json({
         [commentsKey]: enrichedComments,
         summary: {
-          [totalKey]: object.summary.total,
-          percentage: object.summary.percentage,
-          [themesKey]: object.summary.themes,
+          [totalKey]: result.data.summary.total,
+          percentage: result.data.summary.percentage,
+          [themesKey]: result.data.summary.themes,
         },
       })
-    } catch (aiError: any) {
-      console.error("[v0] AI Error occurred:")
-      console.error("[v0] Error message:", aiError?.message)
-      console.error("[v0] Error name:", aiError?.name)
-      console.error("[v0] Error status:", aiError?.status)
-      console.error("[v0] Error cause:", aiError?.cause)
+    } catch (error: any) {
+      console.error(`[v0] Error analyzing ${type} comments:`, error.message)
+      console.error("[v0] Error details:", error)
 
-      // Try to extract more details from the error
-      if (aiError?.cause) {
-        console.error("[v0] Cause details:", JSON.stringify(aiError.cause, null, 2))
-      }
-
-      // Log the full error object
-      try {
-        console.error("[v0] Full error object:", JSON.stringify(aiError, Object.getOwnPropertyNames(aiError), 2))
-      } catch (e) {
-        console.error("[v0] Could not stringify error object")
-      }
-
-      if (aiError?.status === 502 || aiError?.message?.includes("502") || aiError?.message?.includes("Bad Gateway")) {
-        console.error("[v0] OpenAI server error (502 Bad Gateway)")
+      if (error.message.includes("Invalid JSON")) {
         return NextResponse.json(
-          {
-            error: "OpenAI server is temporarily unavailable (502 Bad Gateway). Please try again in a moment.",
-          },
-          { status: 502 },
+          { error: "The AI returned an invalid response format. Please try again." },
+          { status: 500 },
         )
       }
 
-      if (
-        aiError?.status === 429 ||
-        aiError?.message?.includes("quota") ||
-        aiError?.message?.includes("insufficient_quota")
-      ) {
-        console.error("[v0] OpenAI quota exceeded")
-        return NextResponse.json(
-          {
-            error: "OpenAI quota exceeded. Please check your billing at https://platform.openai.com/account/billing",
-          },
-          { status: 429 },
-        )
-      }
-
-      if (aiError?.status === 401 || aiError?.message?.includes("401") || aiError?.message?.includes("Unauthorized")) {
-        console.error("[v0] OpenAI authentication failed - check API key")
-        return NextResponse.json(
-          {
-            error: "OpenAI authentication failed. Please verify your API key is correct.",
-          },
-          { status: 401 },
-        )
-      }
-
-      throw new Error(`AI generation failed: ${aiError?.message || "Unknown error"}`)
+      return NextResponse.json(
+        { error: error.message || "Failed to analyze comments" },
+        { status: 500 },
+      )
     }
   } catch (error) {
-    console.error(`[v0] Error analyzing comments:`, error instanceof Error ? error.message : String(error))
-    if (error instanceof Error && error.stack) {
-      console.error(`[v0] Stack trace:`, error.stack)
-    }
-
+    console.error(`[v0] Error in pro/contra analysis:`, error instanceof Error ? error.message : String(error))
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to analyze comments" },
+      { error: error instanceof Error ? error.message : "Failed to process request" },
       { status: 500 },
     )
   }
