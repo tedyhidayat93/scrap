@@ -12,13 +12,14 @@ const fetcher = async (url: string) => {
 
   return data;
 };
-
+// hooks/use-tiktok-comments.ts
 export function useTikTokComments(
   targetData: number,
   query: string,
   type: "username" | "video" | "keyword",
   enabled = true,
-  latestOnly = false
+  latestOnly = false,
+  searchKey = 0  // Add searchKey parameter with default value
 ) {
   const shouldFetch =
     targetData &&
@@ -28,18 +29,22 @@ export function useTikTokComments(
     (type === "username" || type === "video" || type === "keyword") &&
     enabled;
 
+  // Include searchKey in the dependency array to trigger refetch when it changes
   const { data, error, isLoading, mutate } = useSWR(
     shouldFetch
-      ? `/api/tiktok-user-comments?query=${encodeURIComponent(
-          query
-        )}&type=${type}&latestOnly=${latestOnly}`
+      ? [
+          `/api/tiktok-user-comments?query=${encodeURIComponent(
+            query
+          )}&type=${type}&latestOnly=${latestOnly}&targetData=${targetData}`,
+          searchKey  // Include searchKey in the cache key
+        ]
       : null,
-    fetcher,
+    ([url]) => fetcher(url),  // Update fetcher to handle the array key
     {
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
       refreshInterval: 0,
-      dedupingInterval: 30000,
+      dedupingInterval: 0,  // Set to 0 to ensure immediate refetch
       shouldRetryOnError: false,
       onError: (err) => {
         console.log("[v0] SWR Error:", err);
@@ -50,6 +55,7 @@ export function useTikTokComments(
     }
   );
 
+  // Rest of the hook remains the same
   return {
     handle: data?.data?.handle || data?.data?.keyword || query,
     videosAnalyzed: data?.data?.videosAnalyzed || 0,

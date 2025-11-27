@@ -30,7 +30,7 @@ function cleanUsername(input: string): string {
 
 async function fetchTikTokUserVideos(targetDataFetch:number , handle: string) {
   try {
-    const url = `${BASE_URL}/tiktok/profile/videos?handle=${handle}&max=${targetDataFetch}`;
+    const url = `${BASE_URL}/v3/tiktok/profile/videos?handle=${handle}&max=${targetDataFetch}`;
     console.log("[v0] Fetching videos from:", url);
 
     const response = await fetch(url, {
@@ -76,10 +76,10 @@ async function fetchTikTokVideoComments(targetDataFetch: number, videoUrl: strin
   const targetData = targetDataFetch || DEFAULT_TARGET_DATA;  
   try {
     const url = cursor
-      ? `${BASE_URL}/tiktok/video/comments?url=${encodeURIComponent(
+      ? `${BASE_URL}/v1/tiktok/video/comments?url=${encodeURIComponent(
           videoUrl
         )}&count=${targetData}&limit=${targetData}&cursor=${cursor}`
-      : `${BASE_URL}/tiktok/video/comments?url=${encodeURIComponent(
+      : `${BASE_URL}/v1/tiktok/video/comments?url=${encodeURIComponent(
           videoUrl
         )}&count=${targetData}&limit=${targetData}`;
     console.log("[v0] Fetching comments from:", url);
@@ -227,7 +227,7 @@ async function fetchAllCommentsWithRetry(videoUrl: string, max: number) {
 
 async function fetchTikTokVideoInfo(targetDataFetch: number, videoUrl: string) {
   try {
-    const url = `${BASE_URL}/tiktok/video?url=${encodeURIComponent(videoUrl)}`;
+    const url = `${BASE_URL}/v2/tiktok/video?url=${encodeURIComponent(videoUrl)}`;
     console.log("[v0] Fetching video info from:", url);
 
     const response = await fetch(url, {
@@ -478,10 +478,10 @@ async function searchTikTokByKeyword(targetDataFetch: number, keyword: string, c
       ? keyword.substring(1)
       : keyword;
     const url = cursor
-      ? `${BASE_URL}/tiktok/search/keyword?query=${encodeURIComponent(
+      ? `${BASE_URL}/v1/tiktok/search/keyword?query=${encodeURIComponent(
           cleanKeyword
         )}&count=${targetDataFetch}&cursor=${cursor}`
-      : `${BASE_URL}/tiktok/search/keyword?query=${encodeURIComponent(
+      : `${BASE_URL}/v1/tiktok/search/keyword?query=${encodeURIComponent(
           cleanKeyword
         )}&count=${targetDataFetch}`;
     console.log("[v0] Searching TikTok by keyword:", url);

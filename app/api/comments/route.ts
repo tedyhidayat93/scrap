@@ -13,7 +13,7 @@ interface CommentData {
 
 async function fetchTikTokComments(videoId: string) {
   try {
-    const response = await fetch(`${BASE_URL}/tiktok/video/comments?video_id=${videoId}&count=50`, {
+    const response = await fetch(`${BASE_URL}/v1/tiktok/video/comments?video_id=${videoId}&count=50`, {
       headers: {
         "x-api-key": API_KEY,
       },
@@ -28,7 +28,7 @@ async function fetchTikTokComments(videoId: string) {
 
 async function fetchInstagramComments(postId: string) {
   try {
-    const response = await fetch(`${BASE_URL}/instagram/post/comments?post_id=${postId}`, {
+    const response = await fetch(`${BASE_URL}/v1/instagram/post/comments?post_id=${postId}`, {
       headers: {
         "x-api-key": API_KEY,
       },
@@ -43,7 +43,7 @@ async function fetchInstagramComments(postId: string) {
 
 async function fetchYouTubeComments(videoId: string) {
   try {
-    const response = await fetch(`${BASE_URL}/youtube/video/comments?video_id=${videoId}`, {
+    const response = await fetch(`${BASE_URL}/v1/youtube/video/comments?video_id=${videoId}`, {
       headers: {
         "x-api-key": API_KEY,
       },

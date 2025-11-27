@@ -12,15 +12,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 const sentimentOptions = [
   { value: "all", label: "All Sentiments" },
-  { value: "positive", label: "😊 Positive" },
-  { value: "neutral", label: "😐 Neutral" },
-  { value: "negative", label: "😠 Negative" },
+  { value: "positive", label: "Positive" },
+  { value: "neutral", label: "Neutral" },
+  { value: "negative", label: "Negative" },
 ];
 
 const accountTypeOptions = [
   { value: "all", label: "All Accounts" },
-  { value: "bot", label: "🤖 Bot" },
-  { value: "real", label: "👤 Real Account" },
+  { value: "bot", label: "Bot" },
+  { value: "real", label: "Real Account" },
 ];
 
 // ... [previous imports and formatTimeAgo function]

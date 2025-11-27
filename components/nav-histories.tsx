@@ -102,8 +102,8 @@ export function NavHistories({ histories, onSelect, onDelete }: NavHistoriesProp
                     <HistoryIcon className="h-3 w-3 text-muted-foreground" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between w-full">
-                      <p className="line-clamp-1 font-medium flex-1">{query.query}</p>
+                    <div className="flex items-center justify-between max-w-full">
+                      <p className="line-clamp-1 truncate font-medium flex-1">{query.query}</p>
                       <span className="text-[10px] text-muted-foreground ml-2 whitespace-nowrap">
                         {query.platform}
                       </span>

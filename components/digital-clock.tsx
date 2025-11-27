@@ -26,7 +26,7 @@ export function DigitalClock() {
     );
   }
 
-  const formattedDate = format(currentTime, 'EEEE, d MMMM yyyy', { locale: id });
+  const formattedDate = format(currentTime, 'd MMM yyyy');
   const formattedTime = format(currentTime, 'HH:mm:ss');
 
   return (

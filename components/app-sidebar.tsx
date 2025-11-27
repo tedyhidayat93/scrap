@@ -43,10 +43,15 @@ export function AppSidebar({ onHistorySelect, ...props }: AppSidebarProps) {
   return (
     <Sidebar className="border-r-0" {...props}>
       <SidebarHeader>
-        <div className="space-y-1 pb-4 pt-3 px-3">
-          <h1 className="font-bold text-glow-primary m-0 text-base text-glow-intense">SOCIAL MEDIA ANALYTICS</h1>
-          {/* <small className="text-xs text-muted-foreground">Scrape Comments</small> */}
+        <div className="pb-4 pt-3 px-3">
+          <h1 className="font-bold text-glow-primary m-0 text-2xl text-glow-intense leading-none">
+            SCRAPY
+          </h1>
+          <small className="block text-[10px] text-accent leading-none">
+            Comment Analyzer
+          </small>
         </div>
+
         <NavMain items={data.navMain} />
       </SidebarHeader>
       <SidebarContent>

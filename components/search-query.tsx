@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { PLATFORMS } from "@/constant/global";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PlatformType } from "@/interfaces/global";
+import TerminalPreloader from "./preloader";
 
 
 interface SearchQueryProps {
@@ -136,87 +137,98 @@ export function SearchQuery({
           </p>
         </div>
 
-        <div className="flex gap-2">
-          <div className="space-y-2">
-            <Label htmlFor="platform">Platform</Label>
-            <div className="border border-cyan-900/50 hover:border-cyan-900">
-              <Select 
-                value={selectedPlatform} 
-                onValueChange={(value: PlatformType) => setSelectedPlatform(value)}
-                disabled={isLoading}
-              >
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Select Platform" />
-                </SelectTrigger>
-                <SelectContent>
-                  {PLATFORMS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      <option.icon className="w-4 h-4" />
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+        {isLoading ? (
+          <div className="space-y-4">
+            <TerminalPreloader />
+            <div className="text-center text-sm text-muted-foreground">
+              Analyzing data, please wait...
             </div>
           </div>
+        ) : (
+          <>
+            <div className="flex gap-2">
+              <div className="space-y-2">
+                <Label htmlFor="platform">Platform</Label>
+                <div className="border border-cyan-800/90 hover:border-cyan-700">
+                  <Select 
+                    value={selectedPlatform} 
+                    onValueChange={(value: PlatformType) => setSelectedPlatform(value)}
+                    disabled={isLoading}
+                  >
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Select Platform" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PLATFORMS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          <option.icon className="w-4 h-4" />
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="targetData">Target Data</Label>
-            <Input
-              placeholder=""
-              value={targetDataValue}
-              type="number"
-              onChange={(e) => setTargetDataValue(Number(e.target.value))}
-              className="flex-1 border border-cyan-900/50 hover:border-cyan-900"
-              disabled={isLoading}
-            />
-          </div>
-          <div className="space-y-2 w-full">
-            <Label htmlFor="platform">Value</Label>
-            <Input
-              placeholder="e.g., #election, @charlidamelio, or video URL..."
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              onKeyPress={handleKeyPress}
-              className="flex-1 border border-cyan-900/50 hover:border-cyan-900"
-              disabled={isLoading}
-            />
-          </div>
-          <Button
-            onClick={handleSearch}
-            className={
-              !inputValue.trim() || !inputValue || isLoading
-                ? "mt-5.5 opacity-50 effect-hover cursor-not-allowed!"
-                : "mt-5.5"
-            }
-            disabled={!inputValue.trim() || isLoading}
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Analyzing...
-              </>
-            ) : (
-              <>
-                <Search className="mr-2 h-4 w-4" />
-                Analyze
-              </>
-            )}
-          </Button>
-        </div>
+              <div className="space-y-2">
+                <Label htmlFor="targetData">Target Data</Label>
+                <Input
+                  placeholder=""
+                  value={targetDataValue}
+                  type="number"
+                  onChange={(e) => setTargetDataValue(Number(e.target.value))}
+                  className="flex-1 border border-cyan-800/90 hover:border-cyan-700"
+                  disabled={isLoading}
+                />
+              </div>
+              <div className="space-y-2 w-full">
+                <Label htmlFor="platform">Value</Label>
+                <Input
+                  placeholder="e.g., #election, @charlidamelio, or video URL..."
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  className="flex-1 border border-cyan-800/90 hover:border-cyan-700"
+                  disabled={isLoading}
+                />
+              </div>
+              <Button
+                onClick={handleSearch}
+                className={
+                  !inputValue.trim() || !inputValue || isLoading
+                    ? "mt-5.5 opacity-50 effect-hover cursor-not-allowed"
+                    : "mt-5.5"
+                }
+                disabled={isLoading || !inputValue.trim()}
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Analyzing...
+                  </>
+                ) : (
+                  <>
+                    <Search className="mr-2 h-4 w-4" />
+                    Analyze
+                  </>
+                )}
+              </Button>
+            </div>
 
-        <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-md group">
-          <Switch
-            id="latest-only"
-            checked={latestOnly}
-            onCheckedChange={setLatestOnly}
-            disabled={isLoading}
-            className="border group-hover:border-cyan-900 border-cyan-900/50"
-          />
-          <Label htmlFor="latest-only" className="text-sm cursor-pointer">
-            Latest video only (analyze only the most recent video)
-          </Label>
-        </div>
+            <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-md group">
+              <Switch
+                id="latest-only"
+                checked={latestOnly}
+                onCheckedChange={setLatestOnly}
+                disabled={isLoading}
+                className={`border group-hover:border-cyan-900 border-cyan-900/50 ${isLoading ? 'opacity-50' : ''}`}
+              />
+              <Label htmlFor="latest-only" className="text-sm cursor-pointer">
+                Latest video only (analyze only the most recent video)
+              </Label>
+            </div>
+          </>
+        )}
 
         {currentQuery ? (
           getDisplayText()

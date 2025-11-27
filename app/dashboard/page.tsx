@@ -43,6 +43,7 @@ export default function Page() {
   const [cursor, setCursor] = useState<number | null>(null);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
+  const [searchKey, setSearchKey] = useState(0);  // Moved up to be declared before use
   const hasLoadedMore = useRef(false);
   const [crawlingLogs, setCrawlingLogs] = useState<Array<{
     timestamp: string;
@@ -57,7 +58,8 @@ export default function Page() {
     formValues.query,
     formValues.queryType,
     !hasLoadedMore.current,
-    formValues.latestOnly
+    formValues.latestOnly,
+    searchKey // This will trigger a refetch when searchKey changes
   );
 
   const handleLoadMore = async () => {
@@ -113,6 +115,7 @@ export default function Page() {
     }
   }, [apiData.cursor, apiData.hasMore]);
 
+
   const handleSearch = (
     query: string,
     targetData: number,
@@ -120,6 +123,9 @@ export default function Page() {
     type: QueryType,
     latestOnly: boolean = false
   ) => {
+    // Don't start a new search if already analyzing
+    if (isAnalyzing) return;
+    
     // Update the form values when search is triggered
     setFormValues(prev => ({
       ...prev,
@@ -130,6 +136,8 @@ export default function Page() {
       targetData
     }));
     
+    // Force a new search by updating the search key
+    setSearchKey(prev => prev + 1);
     setIsAnalyzing(true);
 
     // Add to history
@@ -141,15 +149,14 @@ export default function Page() {
       type: type
     });
 
-    setCrawlingLogs([
+    setCrawlingLogs(prev => [
+      ...prev,
       {
         timestamp: new Date().toLocaleTimeString(),
         type: "info",
         message: `Starting analysis for ${platform} type ${type}: ${query}`,
       },
     ]);
-
-    setTimeout(() => setIsAnalyzing(false), 1200);
   };
 
   useEffect(() => {
@@ -171,7 +178,8 @@ export default function Page() {
           message: `Error: ${apiData.error}`,
         },
       ]);
-    } else if (apiData.totalComments > 0) {
+      setIsAnalyzing(false);
+    } else if (apiData.hasData) {
       setCrawlingLogs((prev) => [
         ...prev,
         {
@@ -182,13 +190,9 @@ export default function Page() {
           } comments from ${apiData.videosAnalyzed || 1} video(s)`,
         },
       ]);
+      setIsAnalyzing(false);
     }
-  }, [
-    apiData.isLoading,
-    apiData.error,
-    apiData.totalComments,
-    apiData.videosAnalyzed,
-  ]);
+  }, [apiData.isLoading, apiData.error, apiData.hasData, apiData.totalComments, apiData.videosAnalyzed]);
 
   const allComments = [...apiData.comments, ...additionalComments];
   const totalComments = apiData.totalComments + additionalComments.length;
