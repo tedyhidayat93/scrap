@@ -16,104 +16,51 @@ import { ContraComments } from "@/components/contra-comments";
 import { IntelligenceAnalysis } from "@/components/intelligence-analysis";
 import { useState, useEffect, useRef } from "react";
 import { useTikTokComments } from "@/hooks/use-tiktok-comments";
+import { PlatformType, QueryType } from "@/interfaces/global";
+import { useSearchHistory } from "@/context/search-history-context";
+import { AppSidebar } from "@/components/app-sidebar";
 
 export default function Page() {
-  const [query, setQuery] = useState<string>("");
-  const [queryType, setQueryType] = useState<"username" | "video" | "keyword">(
-    "username"
-  );
-  const [latestOnly, setLatestOnly] = useState(false);
+  // const [searchParams, setSearchParams] = useState({
+  //   query: "",
+  //   queryType: "username" as const,
+  //   platform: "tiktok" as PlatformType,
+  //   latestOnly: false,
+  // });
+
+  // Update the type of queryType in the state to be QueryType
+  const [searchParams, setSearchParams] = useState<{
+    query: string;
+    queryType: QueryType;  // Changed from "username" to QueryType
+    platform: PlatformType;
+    latestOnly: boolean;
+  }>({
+    query: "",
+    queryType: "username",
+    platform: "tiktok",
+    latestOnly: false,
+  });
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [additionalComments, setAdditionalComments] = useState<any[]>([]);
   const [cursor, setCursor] = useState<number | null>(null);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const hasLoadedMore = useRef(false);
-  const [crawlingLogs, setCrawlingLogs] = useState<
-    Array<{
-      timestamp: string;
-      type: "info" | "success" | "error" | "warning";
-      message: string;
-    }>
-  >([]);
+  const [crawlingLogs, setCrawlingLogs] = useState<Array<{
+    timestamp: string;
+    type: "info" | "success" | "error" | "warning";
+    message: string;
+  }>>([]);
+  
+  const { query, queryType, platform, latestOnly } = searchParams;
+  const { addHistory } = useSearchHistory()
 
   const apiData = useTikTokComments(
-    query,
-    queryType,
+    searchParams.query,
+    searchParams.queryType,
     !hasLoadedMore.current,
-    latestOnly
+    searchParams.latestOnly
   );
-
-  useEffect(() => {
-    if (apiData.cursor !== undefined && apiData.cursor !== null) {
-      console.log("[v0] Setting initial cursor from API:", apiData.cursor);
-      setCursor(apiData.cursor);
-      setHasMore(apiData.hasMore);
-    }
-  }, [apiData.cursor, apiData.hasMore]);
-
-  const handleSearch = (
-    newQuery: string,
-    type: "username" | "video" | "keyword",
-    latest = false
-  ) => {
-    setIsAnalyzing(true);
-    setQuery(newQuery);
-    setQueryType(type);
-    setLatestOnly(latest);
-    setAdditionalComments([]);
-    setCursor(null);
-    setHasMore(true);
-    hasLoadedMore.current = false;
-    setCrawlingLogs([
-      {
-        timestamp: new Date().toLocaleTimeString(),
-        type: "info",
-        message: `Starting analysis for ${type}: ${newQuery}${
-          latest ? " (latest video only)" : ""
-        }`,
-      },
-    ]);
-    setTimeout(() => setIsAnalyzing(false), 2000);
-  };
-
-  useEffect(() => {
-    if (apiData.isLoading) {
-      setCrawlingLogs((prev) => [
-        ...prev,
-        {
-          timestamp: new Date().toLocaleTimeString(),
-          type: "info",
-          message: "Fetching data from TikTok API...",
-        },
-      ]);
-    } else if (apiData.error) {
-      setCrawlingLogs((prev) => [
-        ...prev,
-        {
-          timestamp: new Date().toLocaleTimeString(),
-          type: "error",
-          message: `Error: ${apiData.error}`,
-        },
-      ]);
-    } else if (apiData.totalComments > 0) {
-      setCrawlingLogs((prev) => [
-        ...prev,
-        {
-          timestamp: new Date().toLocaleTimeString(),
-          type: "success",
-          message: `Successfully fetched ${
-            apiData.totalComments
-          } comments from ${apiData.videosAnalyzed || 1} video(s)`,
-        },
-      ]);
-    }
-  }, [
-    apiData.isLoading,
-    apiData.error,
-    apiData.totalComments,
-    apiData.videosAnalyzed,
-  ]);
 
   const handleLoadMore = async () => {
     if (!apiData.videoUrl || isLoadingMore || !hasMore) return;
@@ -160,17 +107,104 @@ export default function Page() {
     }
   };
 
-  const allComments = [...apiData.comments, ...additionalComments];
 
+  useEffect(() => {
+    if (apiData.cursor !== undefined && apiData.cursor !== null) {
+      console.log("[v0] Setting initial cursor from API:", apiData.cursor);
+      setCursor(apiData.cursor);
+      setHasMore(apiData.hasMore);
+    }
+  }, [apiData.cursor, apiData.hasMore]);
+
+  const handleSearch = (
+    newQuery: string,
+    newPlatform: PlatformType,
+    type: QueryType,
+    latest = false
+  ) => {
+    setIsAnalyzing(true);
+    
+    // Update search params
+    setSearchParams(prev => ({
+      ...prev,
+      query: newQuery,
+      platform: newPlatform,
+      queryType: type,
+      latestOnly: latest
+    }));
+
+    // Add to history
+    addHistory({
+      platform: newPlatform,
+      query: newQuery,
+      content: `Searching for ${type} on ${newPlatform}`,
+      datetime: new Date().toISOString(),
+      // type:type
+    });
+
+    setCrawlingLogs([
+      {
+        timestamp: new Date().toLocaleTimeString(),
+        type: "info",
+        message: `Starting analysis for ${newPlatform} type ${type}: ${newQuery}`,
+      },
+    ]);
+
+    setTimeout(() => setIsAnalyzing(false), 1200);
+  };
+
+  useEffect(() => {
+    if (apiData.isLoading) {
+      setCrawlingLogs((prev) => [
+        ...prev,
+        {
+          timestamp: new Date().toLocaleTimeString(),
+          type: "info",
+          message: "Fetching data from TikTok API...",
+        },
+      ]);
+    } else if (apiData.error) {
+      setCrawlingLogs((prev) => [
+        ...prev,
+        {
+          timestamp: new Date().toLocaleTimeString(),
+          type: "error",
+          message: `Error: ${apiData.error}`,
+        },
+      ]);
+    } else if (apiData.totalComments > 0) {
+      setCrawlingLogs((prev) => [
+        ...prev,
+        {
+          timestamp: new Date().toLocaleTimeString(),
+          type: "success",
+          message: `Successfully fetched ${
+            apiData.totalComments
+          } comments from ${apiData.videosAnalyzed || 1} video(s)`,
+        },
+      ]);
+    }
+  }, [
+    apiData.isLoading,
+    apiData.error,
+    apiData.totalComments,
+    apiData.videosAnalyzed,
+  ]);
+
+  const allComments = [...apiData.comments, ...additionalComments];
   const totalComments = apiData.totalComments + additionalComments.length;
-  const realComments =
-    apiData.realComments + additionalComments.filter((c) => !c.isBot).length;
-  const botComments = totalComments - realComments;
   const uniqueUsers = new Set(
     [...apiData.comments, ...additionalComments].map(
       (c) => c.user?.unique_id || c.user?.id
     )
   ).size;
+  const uniqueUsersList = new Set(
+    [...apiData.comments, ...additionalComments].map(
+      (c) => c.user?.unique_id || c.user?.id
+    )
+  ) as any;
+  const realComments = apiData.realComments + additionalComments.filter((c) => !c.isBot).length;
+  const botComments = totalComments - realComments;
 
   const allCommentsData = [...apiData.comments, ...additionalComments];
   const sentimentCounts = {
@@ -185,6 +219,7 @@ export default function Page() {
     totalComments,
     realComments,
     botComments,
+    uniqueUsersList,
     uniqueUsers,
     sentimentCounts,
     queryType,
@@ -194,8 +229,17 @@ export default function Page() {
 
   return (
     <div className="min-h-screen">
-      <DashboardHeader username={query} type={queryType} />
-      <main className="container mx-auto p-6 space-y-6 cyber-grid">
+      <main className="container h-screen mx-auto p-6 space-y-6 cyber-grid">
+        <AppSidebar 
+          onHistorySelect={(query, platform, type) => {
+            setSearchParams(prev => ({
+              ...prev,
+              query,
+              queryType: type,
+              platform: platform as PlatformType
+            }));
+          }}
+        />
         <SearchQuery
           onSearch={handleSearch}
           currentQuery={query}
@@ -227,6 +271,13 @@ export default function Page() {
                   />
                 </div>
 
+                <RecentComments
+                  data={enhancedData}
+                  onLoadMore={handleLoadMore}
+                  isLoadingMore={isLoadingMore}
+                  hasMore={hasMore}
+                />
+
                 <IntelligenceAnalysis data={enhancedData} />
 
                 <div className="grid gap-4 lg:grid-cols-2">
@@ -241,12 +292,6 @@ export default function Page() {
                 </div>
 
                 <AccountRiskAnalysis data={enhancedData} />
-                <RecentComments
-                  data={enhancedData}
-                  onLoadMore={handleLoadMore}
-                  isLoadingMore={isLoadingMore}
-                  hasMore={hasMore && queryType === "video"}
-                />
               </>
             )}
           </div>

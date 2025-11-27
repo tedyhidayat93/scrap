@@ -61,7 +61,7 @@
   --destructive-foreground: oklch(0.98 0.005 240);
   --success: oklch(0.65 0.15 140);
   --warning: oklch(0.75 0.18 85);
-  --border: oklch(0.25 0.02 240 / 0.5);
+  --border: oklch(49.278% 0.10613 236.266 / 0.746);
   --input: oklch(0.15 0.015 240);
   --ring: oklch(0.65 0.15 220);
   --chart-1: oklch(0.65 0.15 220);
@@ -138,6 +138,7 @@
 
   /* Subtle tech grid pattern for cybersecurity theme */
   .cyber-grid {
+    position: relative;
     background-image: linear-gradient(
         color-mix(in oklch, var(--color-primary), transparent 94%) 1px,
         transparent 1px
@@ -149,6 +150,35 @@
       );
     background-size: 50px 50px;
     background-position: -1px -1px;
+    overflow: hidden;
+  }
+
+  .cyber-grid::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(
+      to right,
+      transparent,
+      color-mix(in oklch, var(--color-primary), transparent 90%) 50%,
+      transparent
+    );
+    background-size: 200% 100%;
+    animation: gridGlow 8s linear infinite;
+    opacity: 0.5;
+    pointer-events: none;
+  }
+
+  @keyframes gridGlow {
+    0% {
+      background-position: -100% 0;
+    }
+    100% {
+      background-position: 200% 0;
+    }
   }
 
   /* Glass effect with stronger borders for professional look */
@@ -192,5 +222,126 @@
     font-variant-numeric: tabular-nums;
     letter-spacing: 0.02em;
     color: var(--color-primary);
+  }
+}
+
+@layer utilities {
+  /* Text Glow Effects */
+  .text-glow {
+    text-shadow: 0 0 5px rgba(0, 168, 232, 0.7);
+    color: #e6f7ff;
+    transition: text-shadow 0.3s ease;
+  }
+
+  .text-glow:hover {
+    text-shadow: 0 0 10px rgba(0, 168, 232, 0.9), 0 0 20px rgba(0, 119, 230, 0.5);
+  }
+
+  .text-glow-primary {
+    text-shadow: 0 0 8px rgba(0, 168, 232, 0.8);
+    color: #4da6ff;
+    transition: all 0.3s ease;
+  }
+
+  .text-glow-primary:hover {
+    text-shadow: 0 0 12px rgba(0, 168, 232, 1), 0 0 25px rgba(0, 119, 230, 0.7);
+  }
+
+  .text-glow-intense {
+    text-shadow: 0 0 10px rgba(0, 168, 232, 0.9), 0 0 20px rgba(0, 119, 230, 0.7);
+    color: #80d0ff;
+    animation: pulse-glow 2s infinite alternate;
+  }
+
+  @keyframes pulse-glow {
+    from {
+      text-shadow: 0 0 5px rgba(0, 168, 232, 0.7), 0 0 10px rgba(0, 119, 230, 0.5);
+    }
+    to {
+      text-shadow: 0 0 15px rgba(0, 168, 232, 1), 0 0 30px rgba(0, 119, 230, 0.9);
+    }
+  }
+
+  /* Card Shadow Utilities */
+  .card-shadow {
+    --tw-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --tw-shadow-colored: 0 4px 6px -1px var(--tw-shadow-color), 0 2px 4px -1px var(--tw-shadow-color);
+    box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+  }
+  
+  .card-shadow-md {
+    --tw-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    --tw-shadow-colored: 0 10px 15px -3px var(--tw-shadow-color), 0 4px 6px -2px var(--tw-shadow-color);
+    box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+  }
+  
+  .card-shadow-lg {
+    --tw-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    --tw-shadow-colored: 0 20px 25px -5px var(--tw-shadow-color), 0 10px 10px -5px var(--tw-shadow-color);
+    box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+  }
+  
+  .card-shadow-xl {
+    --tw-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    --tw-shadow-colored: 0 25px 50px -12px var(--tw-shadow-color);
+    box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+  }
+  
+  .card-shadow-2xl {
+    --tw-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    --tw-shadow-colored: 0 25px 50px -12px var(--tw-shadow-color);
+    box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+  }
+  
+  /* Glow effects for cards */
+  .card-glow {
+    box-shadow: 0 0 15px rgba(0, 168, 232, 0.3);
+    transition: box-shadow 0.3s ease;
+  }
+  
+  .card-glow:hover {
+    box-shadow: 0 0 30px rgba(0, 168, 232, 0.5);
+  }
+  
+  .card-glow-primary {
+    box-shadow: 0 0 15px rgba(0, 168, 232, 0.5);
+    transition: all 0.3s ease;
+  }
+  
+  .card-glow-primary:hover {
+    box-shadow: 0 0 30px rgba(0, 168, 232, 0.8);
+  }
+
+  /* effect hover for card or button or anything */
+  .effect-hover {
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+    transition: all 0.3s ease;
+  }
+
+  .effect-hover::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: rgba(0, 168, 232, 0.1);
+    transform: translate(-50%, -50%) rotate(45deg);
+    transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: -1;
+    opacity: 0;
+  }
+
+  .effect-hover:hover::before {
+    width: 300%;
+    height: 300%;
+    opacity: 1;
+    background: rgba(0, 168, 232, 0.1);
+  }
+
+  .effect-hover:active::before {
+    background: rgba(0, 168, 232, 0.2);
   }
 }

@@ -7,8 +7,8 @@ const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: 'Scrap TikTok Comments',
-  description: 'TikTok Comment Analytics',
+  title: 'Social Media Scrapper',
+  description: 'Social Media Scrapper Analytics',
   generator: '-',
   icons: {
     icon: '/icon.svg',

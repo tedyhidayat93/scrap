@@ -17,6 +17,7 @@ import { IntelligenceAnalysis } from "@/components/intelligence-analysis";
 import { useState, useEffect, useRef } from "react";
 import { useTikTokComments } from "@/hooks/use-tiktok-comments";
 import { PlatformType, QueryType } from "@/interfaces/global";
+import { useSearchHistory } from "@/context/search-history-context";
 
 export default function Page() {
   const [query, setQuery] = useState<string>("");
@@ -38,6 +39,7 @@ export default function Page() {
       message: string;
     }>
   >([]);
+  const { addHistory } = useSearchHistory()
 
   const apiData = useTikTokComments(
     query,
@@ -65,6 +67,13 @@ export default function Page() {
     setQuery(newQuery);
     setQueryType(type);
     setLatestOnly(latest);
+
+    addHistory({
+      platform,
+      query,
+      content: `Searching for ${type} on ${platform}`,
+      datetime: new Date().toISOString()
+    })
 
     setCrawlingLogs([
       {
@@ -198,8 +207,8 @@ export default function Page() {
 
   return (
     <div className="min-h-screen">
-      <DashboardHeader username={query} type={queryType} />
-      <main className="container mx-auto p-6 space-y-6 cyber-grid">
+      {/* <DashboardHeader username={query} type={queryType} /> */}
+      <main className="container h-screen mx-auto p-6 space-y-6 cyber-grid">
         <SearchQuery
           onSearch={handleSearch}
           currentQuery={query}

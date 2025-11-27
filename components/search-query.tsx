@@ -101,11 +101,11 @@ export function SearchQuery({
   };
 
   return (
-    <Card className="p-6 bg-card border-border">
+    <Card className="p-6 bg-card card-glow border-border">
       <div className="space-y-4">
         <div>
-          <h2 className="text-lg font-semibold text-card-foreground mb-1">
-            Search Query
+          <h2 className="text-lg text-glow-intense font-semibold text-card-foreground mb-1">
+            Search
           </h2>
           <p className="text-sm text-muted-foreground">
             Select a platform and enter a keyword, username, or video URL to analyze comments
@@ -144,7 +144,7 @@ export function SearchQuery({
             onClick={handleSearch}
             className={
               !inputValue.trim() || !inputValue || isLoading
-                ? "opacity-50 cursor-not-allowed!"
+                ? "opacity-50 effect-hover cursor-not-allowed!"
                 : ""
             }
             disabled={!inputValue.trim() || isLoading}
