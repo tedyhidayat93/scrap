@@ -344,4 +344,41 @@
   .effect-hover:active::before {
     background: rgba(0, 168, 232, 0.2);
   }
+
+  .shimmer-effect {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .shimmer-effect::after {
+    content: "";
+    position: absolute;
+    inset: -40%; /* biar cahaya tidak terpotong */
+    background: linear-gradient(
+      130deg,
+      transparent 0%,
+      color-mix(in srgb, var(--primary) 65%, white) 40%,
+      color-mix(in srgb, var(--primary) 30%, transparent) 60%,
+      transparent 100%
+    );
+    filter: blur(28px); /* smooth glow */
+    transform: translateX(-120%) translateY(-80%);
+    opacity: 0;
+    transition: opacity 0.35s ease-out;
+    pointer-events: none;
+  }
+
+  .shimmer-effect:hover::after {
+    opacity: 0.85;
+    animation: smoothShimmer 1.35s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+  }
+
+  @keyframes smoothShimmer {
+    0% {
+      transform: translateX(-140%) translateY(-80%);
+    }
+    100% {
+      transform: translateX(140%) translateY(80%);
+    }
+  }
 }

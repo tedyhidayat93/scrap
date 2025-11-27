@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -24,6 +24,13 @@ interface SearchQueryProps {
   currentQuery: string;
   queryType: "username" | "video" | "keyword";
   isLoading?: boolean;
+  setFormValues?: (values: {
+    query: string;
+    queryType: "username" | "video" | "keyword";
+    platform: PlatformType;
+    latestOnly: boolean;
+    targetData: number;
+  }) => void;
 }
 
 export function SearchQuery({
@@ -31,11 +38,18 @@ export function SearchQuery({
   currentQuery,
   queryType,
   isLoading,
+  setFormValues,
 }: SearchQueryProps) {
   const [inputValue, setInputValue] = useState("");
   const [targetDataValue, setTargetDataValue] = useState(10);
+  const [selectedPlatform, setSelectedPlatform] = useState<PlatformType>("tiktok");
   const [latestOnly, setLatestOnly] = useState(false);
-  const [selectedPlatform, setSelectedPlatform] = useState<PlatformType>("");
+
+  useEffect(() => {
+    if (currentQuery) {
+      setInputValue(currentQuery);
+    }
+  }, [currentQuery, queryType]);
 
   const detectQueryType = (input: string): "username" | "video" | "keyword" => {
     if (input.includes("tiktok.com") && input.includes("/video/")) {
@@ -53,9 +67,17 @@ export function SearchQuery({
   const handleSearch = () => {
     if (inputValue.trim()) {
       const type = detectQueryType(inputValue.trim());
-      // onSearch(inputValue.trim(), type, latestOnly);
       onSearch(inputValue.trim(), Number(targetDataValue), selectedPlatform, type, latestOnly);
-      setInputValue("");
+
+      if (setFormValues) {
+        setFormValues({
+          query: inputValue.trim(),
+          targetData: Number(targetDataValue),
+          platform: selectedPlatform,
+          queryType: type,
+          latestOnly,
+        });
+      }
     }
   };
 

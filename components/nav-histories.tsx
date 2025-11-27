@@ -38,9 +38,7 @@ export function NavHistories({ histories, onSelect, onDelete }: NavHistoriesProp
     );
   }, [histories, searchTerm]);
 
-  if (!histories.length) {
-    return null
-  }
+  
   return (
     <div className="space-y-4">
       <div className="px-2">
@@ -64,8 +62,32 @@ export function NavHistories({ histories, onSelect, onDelete }: NavHistoriesProp
       </SidebarGroupLabel>
       
       {filteredHistories.length === 0 ? (
-        <div className="px-3 py-6 text-center text-sm text-muted-foreground">
-          {searchTerm ? 'No matching history found' : 'No search history yet'}
+        <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+          <div className="bg-muted rounded-full p-4 mb-4">
+            <HistoryIcon className="h-8 w-8 text-muted-foreground" />
+          </div>
+          <h3 className="text-lg font-medium mb-1">
+            {searchTerm ? 'No matching history found' : 'No search history yet'}
+          </h3>
+          <p className="text-sm text-muted-foreground max-w-xs">
+            {searchTerm 
+              ? 'Try a different search term' 
+              : 'Your search history will appear here'}
+          </p>
+          {!searchTerm && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="mt-4 text-foreground"
+              onClick={() => {
+                // Optional: Add a way to trigger a new search
+                const searchInput = document.querySelector('input[type="search"]') as HTMLInputElement;
+                if (searchInput) searchInput.focus();
+              }}
+            >
+              Start a new search
+            </Button>
+          )}
         </div>
       ) : (
         <SidebarMenu className="max-h-xl overflow-y-auto">
@@ -73,7 +95,7 @@ export function NavHistories({ histories, onSelect, onDelete }: NavHistoriesProp
             <SidebarMenuItem key={query.id}>
               <SidebarMenuButton 
                 onClick={() => onSelect(query)}
-                className="text-left effect-hover text-xs cursor-pointer py-6 border-b border-border rounded-none"
+                className="text-left shimmer-effect text-xs cursor-pointer py-6 border-b border-border rounded-none"
               >
                 <div className="flex items-center gap-2">
                   <div className="flex h-4 w-4 items-center justify-center rounded-full bg-muted">

@@ -28,20 +28,16 @@ export default function Page() {
   //   latestOnly: false,
   // });
 
-  // Update the type of queryType in the state to be QueryType
-  const [searchParams, setSearchParams] = useState<{
-    query: string;
-    queryType: QueryType;  // Changed from "username" to QueryType
-    platform: PlatformType;
-    latestOnly: boolean;
-    targetData: number;
-  }>({
+  // Form state management
+  const [formValues, setFormValues] = useState({
     query: "",
-    queryType: "username",
-    platform: "tiktok",
+    queryType: "username" as QueryType,
+    platform: "tiktok" as PlatformType,
     latestOnly: false,
     targetData: 10,
   });
+
+  const { query, queryType, platform, latestOnly, targetData } = formValues;
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [additionalComments, setAdditionalComments] = useState<any[]>([]);
   const [cursor, setCursor] = useState<number | null>(null);
@@ -54,15 +50,14 @@ export default function Page() {
     message: string;
   }>>([]);
   
-  const { query, queryType, platform, latestOnly } = searchParams;
-  const { addHistory } = useSearchHistory()
+  const { addHistory } = useSearchHistory();
 
   const apiData = useTikTokComments(
-    searchParams.targetData,
-    searchParams.query,
-    searchParams.queryType,
+    formValues.targetData,
+    formValues.query,
+    formValues.queryType,
     !hasLoadedMore.current,
-    searchParams.latestOnly
+    formValues.latestOnly
   );
 
   const handleLoadMore = async () => {
@@ -119,38 +114,38 @@ export default function Page() {
   }, [apiData.cursor, apiData.hasMore]);
 
   const handleSearch = (
-    newQuery: string,
-    targetDataValue: number,
-    newPlatform: PlatformType,
+    query: string,
+    targetData: number,
+    platform: PlatformType,
     type: QueryType,
-    latest = false
+    latestOnly: boolean = false
   ) => {
-    setIsAnalyzing(true);
-    
-    // Update search params
-    setSearchParams(prev => ({
+    // Update the form values when search is triggered
+    setFormValues(prev => ({
       ...prev,
-      targetData: targetDataValue,
-      query: newQuery,
-      platform: newPlatform,
+      query,
       queryType: type,
-      latestOnly: latest
+      platform,
+      latestOnly,
+      targetData
     }));
+    
+    setIsAnalyzing(true);
 
     // Add to history
     addHistory({
-      platform: newPlatform,
-      query: newQuery,
-      content: `Searching for ${type} on ${newPlatform}`,
+      platform: platform,
+      query: query,
+      content: `Searching for ${type} on ${platform}`,
       datetime: new Date().toISOString(),
-      // type:type
+      type: type
     });
 
     setCrawlingLogs([
       {
         timestamp: new Date().toLocaleTimeString(),
         type: "info",
-        message: `Starting analysis for ${newPlatform} type ${type}: ${newQuery}`,
+        message: `Starting analysis for ${platform} type ${type}: ${query}`,
       },
     ]);
 
@@ -236,19 +231,21 @@ export default function Page() {
       <main className="container h-screen mx-auto p-6 space-y-6 cyber-grid">
         <AppSidebar 
           onHistorySelect={(query, platform, type) => {
-            setSearchParams(prev => ({
+            // Update form values without triggering search
+            setFormValues(prev => ({
               ...prev,
               query,
-              queryType: type,
-              platform: platform as PlatformType
+              platform: platform as PlatformType,
+              queryType: type
             }));
           }}
         />
         <SearchQuery
           onSearch={handleSearch}
-          currentQuery={query}
-          queryType={queryType}
+          currentQuery={formValues.query}
+          queryType={formValues.queryType}
           isLoading={isAnalyzing}
+          setFormValues={setFormValues}
         />
 
         {query ? (

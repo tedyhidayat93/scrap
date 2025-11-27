@@ -19,6 +19,7 @@ interface DashboardHeaderProps {
 
 export function DashboardHeader({ username, type }: DashboardHeaderProps) {
   const { refresh, videosAnalyzed, totalVideos } = useTikTokComments(
+    10,
     username,
     type
   );

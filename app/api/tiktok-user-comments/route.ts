@@ -3,7 +3,7 @@ import { AnyCnameRecord } from "node:dns";
 
 // const BASE_URL = "https://api.scrapecreators.com/v1"
 const API_KEY = process.env.TIKTOK_API_KEY!;
-const BASE_URL = process.env.SCRAPPER_API_KEY!
+const BASE_URL = process.env.SCRAPPER_URL!;
 const DEFAULT_TARGET_DATA = "10";
 
 function parseTikTokUrl(
@@ -73,14 +73,15 @@ async function fetchTikTokUserVideos(targetDataFetch:number , handle: string) {
 }
 
 async function fetchTikTokVideoComments(targetDataFetch: number, videoUrl: string, cursor?: number) {
+  const targetData = targetDataFetch || DEFAULT_TARGET_DATA;  
   try {
     const url = cursor
       ? `${BASE_URL}/tiktok/video/comments?url=${encodeURIComponent(
           videoUrl
-        )}&count=${targetDataFetch}&limit=${targetDataFetch}&cursor=${cursor}`
+        )}&count=${targetData}&limit=${targetData}&cursor=${cursor}`
       : `${BASE_URL}/tiktok/video/comments?url=${encodeURIComponent(
           videoUrl
-        )}&count=${targetDataFetch}&limit=${targetDataFetch}`;
+        )}&count=${targetData}&limit=${targetData}`;
     console.log("[v0] Fetching comments from:", url);
 
     const response = await fetch(url, {
