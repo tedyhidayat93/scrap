@@ -95,8 +95,8 @@ export function SearchQuery({
       return (
         <div className="text-sm bg-muted/50 p-4 rounded-md flex items-center gap-2">
           <Video className="h-4 w-4 text-muted-foreground" />
-          <span className="text-muted-foreground">Analyzing video: </span>
-          <span className="font-semibold text-foreground truncate">
+          <span className="text-muted-foreground text-nowrap">Analyzing video: </span>
+          <span className="font-semibold text-foreground line-clamp-1 truncate">
             {currentQuery}
           </span>
         </div>
@@ -107,8 +107,8 @@ export function SearchQuery({
       return (
         <div className="text-sm bg-muted/50 p-4 rounded-md flex items-center gap-2">
           <Hash className="h-4 w-4 text-muted-foreground" />
-          <span className="text-muted-foreground">Analyzing keyword: </span>
-          <span className="font-semibold text-foreground">{currentQuery}</span>
+          <span className="text-muted-foreground text-nowrap">Analyzing keyword: </span>
+          <span className="font-semibold text-foreground line-clamp-1">{currentQuery}</span>
         </div>
       );
     }
@@ -119,20 +119,20 @@ export function SearchQuery({
     return (
       <div className="text-sm bg-muted/50 p-4 rounded-md flex items-center gap-2">
         <User className="h-4 w-4 text-muted-foreground" />
-        <span className="text-muted-foreground">Analyzing user: </span>
-        <span className="font-semibold text-foreground">{displayUsername}</span>
+        <span className="text-muted-foreground text-nowrap">Analyzing user: </span>
+        <span className="font-semibold text-foreground line-clamp-1">{displayUsername}</span>
       </div>
     );
   };
 
   return (
     <Card className="p-6 bg-card card-glow border-border">
-      <div className="space-y-4">
+      <div className="space-y-5">
         <div>
-          <h2 className="text-lg text-glow-intense font-semibold text-card-foreground mb-1">
+          <h2 className="text-lg text-glow-intense font-semibold text-card-foreground">
             Search
           </h2>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-xs text-muted-foreground">
             Select a platform and enter a keyword, username, or video URL to analyze comments
           </p>
         </div>
@@ -215,7 +215,7 @@ export function SearchQuery({
               </Button>
             </div>
 
-            <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-md group">
+            {/* <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-md group">
               <Switch
                 id="latest-only"
                 checked={latestOnly}
@@ -226,14 +226,14 @@ export function SearchQuery({
               <Label htmlFor="latest-only" className="text-sm cursor-pointer">
                 Latest video only (analyze only the most recent video)
               </Label>
-            </div>
+            </div> */}
           </>
         )}
 
         {currentQuery ? (
           getDisplayText()
         ) : (
-          <div className="text-sm text-muted-foreground bg-muted/50 p-4 rounded-md">
+          <div className="text-xs text-muted-foreground bg-muted/50 p-4 rounded-md">
             <div className="space-y-2">
               <p className="font-medium">Supported formats:</p>
               <ul className="list-disc list-inside space-y-1 ml-2">

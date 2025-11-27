@@ -45,10 +45,10 @@ export function AppSidebar({ onHistorySelect, ...props }: AppSidebarProps) {
       <SidebarHeader>
         <div className="pb-4 pt-3 px-3">
           <h1 className="font-bold text-glow-primary m-0 text-2xl text-glow-intense leading-none">
-            SCRAPY
+            DEEPINSIGHT
           </h1>
           <small className="block text-[10px] text-accent leading-none">
-            Comment Analyzer
+            Sentiment Analyzer
           </small>
         </div>
 

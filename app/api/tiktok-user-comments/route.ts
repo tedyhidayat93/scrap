@@ -28,7 +28,7 @@ function cleanUsername(input: string): string {
   return input.startsWith("@") ? input.substring(1) : input;
 }
 
-async function fetchTikTokUserVideos(targetDataFetch:number , handle: string) {
+async function fetchTikTokUserVideos(targetDataFetch:number, handle: string) {
   try {
     const url = `${BASE_URL}/v3/tiktok/profile/videos?handle=${handle}&max=${targetDataFetch}`;
     console.log("[v0] Fetching videos from:", url);

@@ -22,6 +22,7 @@ import { formatDistanceToNow } from "date-fns"
 import { NavHistoriesProps } from "@/interfaces/history"
 import { Input } from "@/components/ui/input";
 import { useMemo, useState } from "react";
+import { Separator } from "./ui/separator"
 
 
 export function NavHistories({ histories, onSelect, onDelete }: NavHistoriesProps) {
@@ -103,14 +104,14 @@ export function NavHistories({ histories, onSelect, onDelete }: NavHistoriesProp
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between max-w-full">
-                      <p className="line-clamp-1 truncate font-medium flex-1">{query.query}</p>
+                      <p className="line-clamp-1 truncate font-medium flex-1 max-w-32">{query.query}</p>
                       <span className="text-[10px] text-muted-foreground ml-2 whitespace-nowrap">
                         {query.platform}
                       </span>
                     </div>
                     <div className="flex items-center justify-between w-full text-[10px] text-muted-foreground">
                       <p className="line-clamp-1">
-                        {query.content}
+                        Search: {query.type}
                       </p>
                       <span className="ml-2 whitespace-nowrap">
                         {formatDistanceToNow(new Date(query.datetime), { addSuffix: true })}
