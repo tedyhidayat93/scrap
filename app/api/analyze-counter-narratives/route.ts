@@ -121,7 +121,7 @@ ${JSON.stringify(counterNarrativeSchema.shape, null, 2)}
      * ----------------------------------------------------- */
     try {
       const aiResponse = await retryWithBackoff(async () => {
-        const raw = await askOllama(process.env.OLLAMA_MODEL_LLM!, prompt);
+        const raw = await askOllama(process.env.OLLAMA_MODEL_NARRATIVE_COUNTER!, prompt);
         return extractJsonFromResponse(raw);
       });
 

@@ -107,7 +107,7 @@ Ensure:
  * ----------------------------------------- */
 async function analyzeWithOllama(prompt: string) {
   const raw = await retryWithBackoff(async () => {
-    return await askOllama(process.env.OLLAMA_MODEL_LLM!, prompt);
+    return await askOllama(process.env.OLLAMA_MODEL_NARRATIVE_DETECTION!, prompt);
   });
 
   return extractJSON(raw);

@@ -106,7 +106,7 @@ ${JSON.stringify(ProContraAnalysisSchema.shape, null, 2)}
      * ----------------------------------------------------- */
     try {
       const aiResponse = await retryWithBackoff(async () => {
-        const raw = await askOllama(process.env.OLLAMA_MODEL_LLM!, prompt);
+        const raw = await askOllama(process.env.OLLAMA_MODEL_PRO_CONTRA_COMMENT!, prompt);
         return extractJson(raw);
       });
 

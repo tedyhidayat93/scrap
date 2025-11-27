@@ -140,7 +140,7 @@ ${JSON.stringify(IntelligenceSchema.shape, null, 2)}
      * ----------------------------------------------------- */
     try {
       const aiResponse = await retryWithBackoff(async () => {
-        const raw = await askOllama(process.env.OLLAMA_MODEL_LLM!, prompt);
+        const raw = await askOllama(process.env.OLLAMA_MODEL_INTELLIGENCE_ANALYSIS!, prompt);
         return extractJson(raw);
       });
 

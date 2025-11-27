@@ -37,7 +37,7 @@ function extractJson(text: string) {
  * --------------------------------------------------- */
 async function tryOllama(prompt: string) {
   try {
-    const model = process.env.OLLAMA_MODEL_LLM || "llama3"
+    const model = process.env.OLLAMA_MODEL_NARRATIVE_COUNTER || "llama3"
     const raw = await askOllama(model, prompt)
 
     const json = extractJson(raw)

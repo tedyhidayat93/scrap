@@ -68,7 +68,7 @@ ${commentsText}
      * 1. TRY OLLAMA FIRST
      * --------------------------------------------------- */
     try {
-      const raw = await askOllama(process.env.OLLAMA_MODEL_LLM!, prompt)
+      const raw = await askOllama(process.env.OLLAMA_MODEL_PRO_CONTRA_COMMENT!, prompt)
       const parsed = extractJson(raw)
 
       const validated = KeywordsSchema.safeParse(parsed)
