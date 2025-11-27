@@ -1,6 +1,8 @@
 import { askOllama } from "@/lib/ollama-client"
 import { z } from "zod"
 import { NextResponse } from "next/server"
+import { openai } from "@ai-sdk/openai"
+import { generateObject } from "ai"
 
 const KeywordsSchema = z.object({
   keywords: z.array(
@@ -12,88 +14,132 @@ const KeywordsSchema = z.object({
   ),
 })
 
+
+/* Extract JSON safely */
+function extractJson(text: string) {
+  try {
+    const match =
+      text.match(/```json\n([\s\S]*?)\n```/) ||
+      text.match(/```([\s\S]*?)```/) ||
+      text.match(/{[\s\S]*}/)
+
+    if (!match) throw new Error("No JSON inside response")
+
+    const cleaned = match[0].replace(/```json|```/g, "").trim()
+    return JSON.parse(cleaned)
+  } catch {
+    throw new Error("Invalid JSON from AI")
+  }
+}
+
 export async function POST(request: Request) {
   try {
     const { comments } = await request.json()
 
     if (!comments || !Array.isArray(comments)) {
-      return NextResponse.json({ success: false, error: "Invalid comments data" }, { status: 400 })
+      return NextResponse.json(
+        { success: false, error: "Invalid comments data" },
+        { status: 400 }
+      )
     }
 
     const sampleSize = Math.min(comments.length, 100)
     const sampledComments = comments.slice(0, sampleSize)
     const commentsText = sampledComments.map((c: any) => c.text || "").join("\n")
 
-    console.log("[v0] Extracting keywords from", sampledComments.length, "comments using Ollama")
+    const prompt = `
+Extract the top 10 meaningful keywords from these comments.
 
+Rules:
+- Only extract nouns, verbs, entities (people, places, brands)
+- Skip stopwords, pronouns, conjunctions
+- Count occurrences
+- Categorize keyword as: topic, person, place, brand, action, other
+- Return JSON only with this schema:
+${JSON.stringify(KeywordsSchema.shape)}
+
+Comments:
+${commentsText}
+`
+
+    console.log("[AI] Extracting keywords using Ollama...")
+
+    /* ---------------------------------------------------
+     * 1. TRY OLLAMA FIRST
+     * --------------------------------------------------- */
     try {
-      const prompt = `Extract the top 10 most meaningful keywords from these comments.
-      Rules:
-      - Only extract nouns, verbs, and named entities (people, places, brands, topics)
-      - Skip conjunctions (and, or, but), pronouns (I, you, he, she), articles (a, the), prepositions (in, on, at)
-      - For Indonesian text, extract proper Indonesian words (not concatenated text)
-      - Count how many times each keyword appears
-      - Categorize each keyword as: topic, person, place, brand, action, or other
-      - Return exactly 10 keywords sorted by frequency
-      - Format the response as valid JSON matching this schema: ${JSON.stringify(KeywordsSchema.shape)}
+      const raw = await askOllama(process.env.OLLAMA_MODEL_LLM!, prompt)
+      const parsed = extractJson(raw)
 
-      Comments:
-      ${commentsText}`
-
-      const response = await askOllama(process.env.OLLAMA_MODEL_LLM!, prompt)
-      const parsedResponse = JSON.parse(response)
-      const result = KeywordsSchema.safeParse(parsedResponse)
-
-      if (!result.success) {
-        console.error("[v0] Invalid response format from Ollama:", result.error)
-        throw new Error("Invalid response format from AI")
-      }
-
-      console.log("[v0] AI extracted keywords:", result.data.keywords.length)
+      const validated = KeywordsSchema.safeParse(parsed)
+      if (!validated.success) throw new Error("Ollama returned invalid schema")
 
       return NextResponse.json({
         success: true,
-        keywords: result.data.keywords,
+        keywords: validated.data.keywords,
       })
-    } catch (aiError) {
-      console.error("[v0] AI extraction failed, using fallback method", aiError)
-      // Fallback implementation remains the same
-      const stopwords = new Set([
-        "yang", "dan", "ini", "itu", "dari", "untuk", "dengan", "pada", "adalah", "akan",
-        "sudah", "telah", "juga", "atau", "tidak", "ada", "bisa", "harus", "dapat", "saya",
-        "anda", "kamu", "dia", "mereka", "kami", "kita", "the", "and", "for", "with", "this",
-        "that", "from", "have", "been", "were", "their", "there", "what", "when", "where",
-        "which", "will", "would", "could", "should"
-      ])
-
-      const words = commentsText
-        .toLowerCase()
-        .match(/\b[a-z]{3,}\b/g)
-        ?.filter((word) => !stopwords.has(word)) || []
-
-      const wordCounts = new Map<string, number>()
-      words.forEach((word) => {
-        wordCounts.set(word, (wordCounts.get(word) || 0) + 1)
-      })
-
-      const keywords = Array.from(wordCounts.entries())
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 10)
-        .map(([word, count]) => ({ word, count, category: "topic" }))
-
-      return NextResponse.json({
-        success: true,
-        keywords,
-      })
+    } catch (err) {
+      console.error("[AI] Ollama failed → fallback to OpenAI", err)
     }
+
+    /* ---------------------------------------------------
+     * 2. FALLBACK → OPENAI
+     * --------------------------------------------------- */
+    try {
+      console.log("[AI] Extracting with OpenAI...")
+
+      const { object } = await generateObject({
+        model: openai("gpt-4o-mini"),
+        schema: KeywordsSchema,
+        prompt,
+        temperature: 0.2,
+      })
+
+      return NextResponse.json({
+        success: true,
+        keywords: object.keywords,
+      })
+    } catch (err) {
+      console.error("[AI] OpenAI fallback failed → using manual fallback", err)
+    }
+
+    /* ---------------------------------------------------
+     * 3. LAST RESORT → MANUAL FALLBACK
+     * --------------------------------------------------- */
+
+    const stopwords = new Set([
+      "yang", "dan", "ini", "itu", "dari", "untuk", "dengan", "pada", "adalah", "akan",
+      "sudah", "telah", "juga", "atau", "tidak", "ada", "bisa", "harus", "dapat", "saya",
+      "anda", "kamu", "dia", "mereka", "kami", "kita", "the", "and", "for", "with", "this",
+      "that", "from", "have", "been", "were", "their", "there", "what", "when", "where",
+      "which", "will", "would", "could", "should"
+    ])
+
+    const words = commentsText
+      .toLowerCase()
+      .match(/\b[a-z]{3,}\b/g)
+      ?.filter((w) => !stopwords.has(w)) || []
+
+    const wordCounts = new Map<string, number>()
+    words.forEach((w) => {
+      wordCounts.set(w, (wordCounts.get(w) || 0) + 1)
+    })
+
+    const keywords = Array.from(wordCounts.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10)
+      .map(([word, count]) => ({ word, count, category: "topic" }))
+
+    return NextResponse.json({ success: true, keywords })
   } catch (error) {
     console.error("[v0] Error extracting keywords:", error)
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : "Failed to extract keywords",
+        error:
+          error instanceof Error ? error.message : "Failed to extract keywords",
       },
-      { status: 500 },
+      { status: 500 }
     )
   }
 }

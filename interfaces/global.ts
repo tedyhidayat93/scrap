@@ -70,3 +70,6 @@ export interface NodeData {
   key: string;
   attributes: ObjectType;
 }
+
+export type PlatformType = "tiktok" | "youtube" | "instagram" | "threads" | "facebook" | "twitter" | ""; // add your platforms
+export type QueryType = "username" | "video" | "keyword"

@@ -20,8 +20,10 @@ import {
 interface MetricsOverviewProps {
   data: {
     totalComments: number;
+    comments: Array<any>;
     realComments: number;
     botComments: number;
+    uniqueUsersList: Array<any>;
     uniqueUsers: number;
     isLoading: boolean;
     videoStats?: {
@@ -53,14 +55,22 @@ export function MetricsOverview({ data }: MetricsOverviewProps) {
     totalComments,
     realComments,
     botComments,
+    comments,
     uniqueUsers,
+    uniqueUsersList,
     isLoading,
     videoStats,
     queryType,
     videosAnalyzed,
   } = data;
 
-  const realAccounts = uniqueUsers;
+  const totalRealAccounts = uniqueUsersList.filter((c) => !c.isBot).length;
+  const totalBotAccounts = uniqueUsersList.filter((c) => c.isBot).length;
+  const totalAllAccounts = totalRealAccounts + totalBotAccounts;
+
+  const totalAllRealComments = comments.filter((c) => !c.isBot).length;
+  const totalAllBotComments = comments.filter((c) => c.isBot).length;
+  const totalAllComments = totalAllRealComments + totalAllBotComments;
 
   const formatDate = (timestamp: number | null) => {
     if (!timestamp) return "N/A";
@@ -79,37 +89,44 @@ export function MetricsOverview({ data }: MetricsOverviewProps) {
   const baseMetrics: Metric[] = [
     {
       title: "Total Comments",
-      value: isLoading ? "..." : totalComments.toLocaleString(),
-      change: "0%",
+      value: isLoading ? "..." : totalAllComments.toLocaleString(),
+      change: "",
       trend: "up",
       icon: MessageSquare,
     },
     {
       title: "Real Comments",
-      value: isLoading ? "..." : realComments.toLocaleString(),
-      change: `${realPercentage.toFixed(0)}%`,
+      value: isLoading ? "..." : totalAllRealComments.toLocaleString(),
+      change: ``,
+      trend: realPercentage > 50 ? "up" : "down",
+      icon: MessageCircleCheck,
+    },
+    {
+      title: "Bot Comments",
+      value: isLoading ? "..." : totalAllBotComments.toLocaleString(),
+      change: ``,
       trend: realPercentage > 50 ? "up" : "down",
       icon: MessageCircleCheck,
     },
     {
       title: "Total Users",
-      value: isLoading ? "..." : uniqueUsers.toLocaleString(),
-      change: "0%",
+      value: isLoading ? "..." : totalAllAccounts.toLocaleString(),
+      change: "",
       trend: "up",
       icon: Users,
     },
     {
       title: "Bot Accounts",
-      value: isLoading ? "..." : botComments.toLocaleString(),
-      change: `${botPercentage.toFixed(0)}%`,
+      value: isLoading ? "..." : totalBotAccounts.toLocaleString(),
+      change: ``,
       trend: botPercentage > 50 ? "up" : "down",
       icon: Bot,
     },
     {
       title: "Real Accounts",
-      value: isLoading ? "..." : realAccounts.toLocaleString(),
-      change: `${realPercentage.toFixed(0)}%`,
-      trend: realAccounts > botComments ? "up" : "down",
+      value: isLoading ? "..." : totalRealAccounts.toLocaleString(),
+      change: ``,
+      trend: totalRealAccounts > botComments ? "up" : "down",
       icon: UserCheck,
     },
   ];

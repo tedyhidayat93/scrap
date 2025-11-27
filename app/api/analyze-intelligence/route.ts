@@ -1,7 +1,12 @@
-import { NextResponse } from "next/server"
-import { z } from "zod"
-import { askOllama } from "@/lib/ollama-client"
+import { NextResponse } from "next/server";
+import { z } from "zod";
+import { askOllama } from "@/lib/ollama-client";
+import { openai } from "@ai-sdk/openai";
+import { generateObject } from "ai";
 
+/* -------------------------------------------------------
+ * ZOD SCHEMA
+ * ----------------------------------------------------- */
 const IntelligenceSchema = z.object({
   threatLevel: z.object({
     level: z.enum(["low", "medium", "high", "critical"]).describe("Overall threat level"),
@@ -37,152 +42,153 @@ const IntelligenceSchema = z.object({
   ),
 })
 
-async function retryWithBackoff<T>(fn: () => Promise<T>, maxRetries = 3, initialDelay = 1000): Promise<T> {
-  let lastError: any
+/* -------------------------------------------------------
+ * UTIL: Retry with exponential backoff
+ * ----------------------------------------------------- */
+async function retryWithBackoff<T>(
+  fn: () => Promise<T>,
+  maxRetries = 3,
+  initialDelay = 1000
+): Promise<T> {
+  let lastError: any;
 
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
-      return await fn()
-    } catch (error: any) {
-      lastError = error
+      return await fn();
+    } catch (err: any) {
+      lastError = err;
 
-      const isRetryable = 
-        error?.message?.includes("network") || 
-        error?.message?.includes("timeout") ||
-        error?.message?.includes("connection")
+      const retryable =
+        err?.message?.includes("network") ||
+        err?.message?.includes("timeout") ||
+        err?.message?.includes("connection");
 
-      if (!isRetryable || attempt === maxRetries - 1) {
-        throw error
-      }
+      if (!retryable || attempt === maxRetries - 1) throw err;
 
-      const delay = initialDelay * Math.pow(2, attempt)
-      console.log(`[v0] Retry attempt ${attempt + 1}/${maxRetries} after ${delay}ms`)
-      await new Promise((resolve) => setTimeout(resolve, delay))
+      const delay = initialDelay * Math.pow(2, attempt);
+      console.log(`[AI] Retry attempt ${attempt + 1}: waiting ${delay}ms`);
+      await new Promise((res) => setTimeout(res, delay));
     }
   }
 
-  throw lastError
+  throw lastError;
 }
 
-function extractJsonFromResponse(response: string): any {
+/* -------------------------------------------------------
+ * UTIL: Extract JSON cleanly
+ * ----------------------------------------------------- */
+function extractJson(response: string) {
   try {
-    // Try to extract JSON from code blocks first
-    const jsonMatch = response.match(/```(?:json)?\n([\s\S]*?)\n```/) || 
-                     response.match(/{[\s\S]*}/)
-    
-    if (!jsonMatch) {
-      throw new Error("No JSON found in response")
-    }
+    const match =
+      response.match(/```json\n([\s\S]*?)\n```/) ||
+      response.match(/```([\s\S]*?)```/) ||
+      response.match(/{[\s\S]*}/);
 
-    const jsonString = jsonMatch[0].replace(/```(?:json)?/g, '').trim()
-    return JSON.parse(jsonString)
-  } catch (e) {
-    console.error("Failed to parse JSON from response:", e)
-    throw new Error("Invalid JSON response from AI")
+    if (!match) throw new Error("No JSON found in AI response");
+
+    const cleaned = match[0].replace(/```json|```/g, "").trim();
+    return JSON.parse(cleaned);
+  } catch (err) {
+    throw new Error("Invalid JSON response from AI");
   }
 }
 
+/* -------------------------------------------------------
+ * MAIN POST HANDLER
+ * ----------------------------------------------------- */
 export async function POST(request: Request) {
   try {
-    const { comments, sentimentCounts } = await request.json()
+    const { comments, sentimentCounts } = await request.json();
 
-    if (!comments || !Array.isArray(comments) || comments.length === 0) {
-      return NextResponse.json({ error: "Comments array is required" }, { status: 400 })
+    if (!comments || comments.length === 0) {
+      return NextResponse.json(
+        { error: "Comments array is required" },
+        { status: 400 }
+      );
     }
 
-    const sampleComments = comments.slice(0, 100)
-    const commentTexts = sampleComments.map((c, i) => `${i + 1}. ${c.text}`).join("\n")
+    /* Build prompt */
+    const total = comments.length;
+    const sample = comments.slice(0, 100);
+    const commentTexts = sample
+      .map((c: any, i: number) => `${i + 1}. ${c.text}`)
+      .join("\n");
 
-    const totalComments = comments.length
-    const positivePercent = ((sentimentCounts.positive / totalComments) * 100).toFixed(1)
-    const negativePercent = ((sentimentCounts.negative / totalComments) * 100).toFixed(1)
-    const neutralPercent = ((sentimentCounts.neutral / totalComments) * 100).toFixed(1)
+    const pct = {
+      pos: ((sentimentCounts.positive / total) * 100).toFixed(1),
+      neg: ((sentimentCounts.negative / total) * 100).toFixed(1),
+      neu: ((sentimentCounts.neutral / total) * 100).toFixed(1),
+    };
 
-    const prompt = `You are a cybersecurity intelligence analyst. Analyze these ${totalComments} social media comments and extract actionable intelligence.
+    const prompt = `
+You are a cybersecurity intelligence analyst.
 
-    SENTIMENT DISTRIBUTION:
-    - Positive: ${positivePercent}%
-    - Negative: ${negativePercent}%
-    - Neutral: ${neutralPercent}%
+SENTIMENT:
+- Positive: ${pct.pos}%
+- Negative: ${pct.neg}%
+- Neutral: ${pct.neu}%
 
-    COMMENTS:
-    ${commentTexts}
+COMMENTS:
+${commentTexts}
 
-    Provide a comprehensive intelligence assessment following this JSON schema exactly:
+Return JSON strictly following this schema:
+${JSON.stringify(IntelligenceSchema.shape, null, 2)}
+`;
 
-    {
-      "threatLevel": {
-        "level": "low|medium|high|critical",
-        "description": "string",
-        "indicators": ["string"]
-      },
-      "keyEntities": {
-        "people": ["string"],
-        "organizations": ["string"],
-        "locations": ["string"]
-      },
-      "behavioralPatterns": [{
-        "pattern": "string",
-        "frequency": 0-100,
-        "significance": "string"
-      }],
-      "emergingTrends": [{
-        "trend": "string",
-        "momentum": "rising|stable|declining",
-        "description": "string",
-        "keywords": ["string"]
-      }],
-      "recommendations": [{
-        "action": "string",
-        "priority": "low|medium|high",
-        "rationale": "string"
-      }]
-    }
-
-    Focus on:
-    - Information integrity (fake news, manipulation)
-    - Community safety (harassment, threats)
-    - Narrative warfare (coordinated messaging)
-    - Anomalous activity (bot networks, spam)
-    - Sentiment shifts and polarization
-
-    Return ONLY valid JSON, no other text.`
-
+    /* -------------------------------------------------------
+     * STEP 1: Try OLLAMA
+     * ----------------------------------------------------- */
     try {
-      console.log(`[v0] Analyzing intelligence from ${sampleComments.length} comments...`)
-      console.log(`prompt...:`, prompt)
+      const aiResponse = await retryWithBackoff(async () => {
+        const raw = await askOllama(process.env.OLLAMA_MODEL_LLM!, prompt);
+        return extractJson(raw);
+      });
 
-      const response = await retryWithBackoff(async () => {
-        const result = await askOllama(process.env.OLLAMA_MODEL_LLM!, prompt)
-        try {
-          return extractJsonFromResponse(result)
-        } catch (e) {
-          console.error("Failed to parse AI response:", e)
-          throw new Error("Invalid response format from AI")
-        }
-      })
+      const valid = IntelligenceSchema.safeParse(aiResponse);
+      if (!valid.success) throw new Error("Invalid schema from Ollama");
 
-      const result = IntelligenceSchema.safeParse(response)
-      
-      if (!result.success) {
-        console.error("[v0] Invalid response format from Ollama:", result.error)
-        throw new Error("Invalid response format from AI")
+      return NextResponse.json(valid.data);
+    } catch (ollamaErr: any) {
+      console.error("[AI] Ollama failed, falling back → OpenAI");
+    }
+
+    /* -------------------------------------------------------
+     * STEP 2: FALLBACK OPENAI
+     * ----------------------------------------------------- */
+    try {
+      const { object } = await generateObject({
+        model: openai("gpt-4o-mini"),
+        schema: IntelligenceSchema,
+        prompt,
+        temperature: 0.2,
+      });
+
+      return NextResponse.json(object);
+    } catch (openaiErr: any) {
+      console.error("[AI] OpenAI failed:", openaiErr);
+
+      if (
+        openaiErr?.status === 429 ||
+        openaiErr?.message?.includes("quota")
+      ) {
+        return NextResponse.json(
+          {
+            error:
+              "OpenAI quota exceeded. Check billing at https://platform.openai.com/account/billing",
+          },
+          { status: 429 }
+        );
       }
 
-      console.log(`[v0] Intelligence analysis complete`)
-      return NextResponse.json(result.data)
-    } catch (error: any) {
-      console.error(`[v0] Error in intelligence analysis:`, error.message)
-      return NextResponse.json(
-        { error: error.message || "Failed to analyze intelligence" },
-        { status: 500 }
-      )
+      throw openaiErr;
     }
-  } catch (error) {
-    console.error(`[v0] Error in intelligence analysis:`, error)
+  } catch (error: any) {
+    console.error("[AI] Final failure:", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to process request" },
+      {
+        error: error.message ?? "Failed to analyze intelligence",
+      },
       { status: 500 }
-    )
+    );
   }
 }

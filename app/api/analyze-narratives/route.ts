@@ -1,6 +1,11 @@
 import { z } from "zod";
 import { askOllama } from "@/lib/ollama-client";
+import { openai } from "@ai-sdk/openai";
+import { generateObject } from "ai";
 
+/* -----------------------------------------
+ *  SCHEMA
+ * ----------------------------------------- */
 const narrativeSchema = z.object({
   mainNarrative: z.object({
     title: z.string().describe("The primary topic or theme being discussed"),
@@ -31,108 +36,163 @@ const narrativeSchema = z.object({
     .describe("Other significant discussion themes"),
 });
 
-async function retryWithBackoff<T>(fn: () => Promise<T>, maxRetries = 3, initialDelay = 1000): Promise<T> {
-  let lastError: any;
+/* -----------------------------------------
+ *  HELPERS
+ * ----------------------------------------- */
+const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
-  for (let attempt = 0; attempt < maxRetries; attempt++) {
+async function retryWithBackoff<T>(
+  fn: () => Promise<T>,
+  maxRetries = 3,
+  initialDelay = 1000
+): Promise<T> {
+  let error: any;
+
+  for (let i = 0; i < maxRetries; i++) {
     try {
       return await fn();
-    } catch (error: any) {
-      lastError = error;
+    } catch (e: any) {
+      error = e;
 
-      const isRetryable = 
-        error?.message?.includes("network") || 
-        error?.message?.includes("timeout") ||
-        error?.message?.includes("connection");
+      const retryable =
+        e?.message?.includes("network") ||
+        e?.message?.includes("timeout") ||
+        e?.message?.includes("connection");
 
-      if (!isRetryable || attempt === maxRetries - 1) {
-        throw error;
-      }
+      if (!retryable || i === maxRetries - 1) throw error;
 
-      const delay = initialDelay * Math.pow(2, attempt);
-      console.log(`[v0] Retry attempt ${attempt + 1}/${maxRetries} after ${delay}ms due to: ${error?.message}`);
-      await new Promise((resolve) => setTimeout(resolve, delay));
+      const ms = initialDelay * 2 ** i;
+      console.log(`[v0] Retry ${i + 1}/${maxRetries} after ${ms}ms: ${e.message}`);
+      await delay(ms);
     }
   }
 
-  throw lastError;
+  throw error;
 }
 
+function extractJSON(text: string) {
+  const match =
+    text.match(/```json\n([\s\S]*?)```/) ||
+    text.match(/{[\s\S]*}/);
+
+  if (!match) throw new Error("No JSON found");
+
+  const clean = match[0].replace(/```json|```/g, "").trim();
+  return JSON.parse(clean);
+}
+
+function buildPrompt(total: number, sample: string) {
+  return `Analyze these ${total} TikTok comments and identify the main narrative and secondary narratives.
+
+Comments:
+${sample}
+
+Your task:
+1. Identify the PRIMARY narrative  
+2. Identify secondary narratives  
+3. Determine sentiment & keywords  
+4. Estimate narrative percentages
+
+Return ONLY valid JSON matching this schema:
+${JSON.stringify(narrativeSchema.shape, null, 2)}
+
+Ensure:
+- JSON only, no extra text
+- All required properties included
+- Percentages sum approx 100%`;
+}
+
+/* -----------------------------------------
+ *  MODEL CALLS
+ * ----------------------------------------- */
+async function analyzeWithOllama(prompt: string) {
+  const raw = await retryWithBackoff(async () => {
+    return await askOllama(process.env.OLLAMA_MODEL_LLM!, prompt);
+  });
+
+  return extractJSON(raw);
+}
+
+async function analyzeWithOpenAI(prompt: string) {
+  const { object } = await generateObject({
+    model: openai("gpt-4o-mini"),
+    schema: narrativeSchema,
+    prompt,
+    temperature: 0.3,
+  });
+
+  return object;
+}
+
+/* -----------------------------------------
+ *  MAIN HANDLER
+ * ----------------------------------------- */
 export async function POST(req: Request) {
   try {
     const { comments } = await req.json();
 
-    if (!comments || comments.length === 0) {
+    if (!comments?.length) {
       return Response.json({ error: "No comments provided" }, { status: 400 });
     }
 
-    // Sample comments for AI analysis (max 100 to avoid token limits)
-    const sampleComments = comments
+    const sample = comments
       .slice(0, 100)
       .map((c: any) => c.text)
       .filter(Boolean)
       .join("\n---\n");
 
-    const prompt = `Analyze these ${comments.length} TikTok comments and identify the main narrative and secondary narratives being discussed. 
+    const prompt = buildPrompt(comments.length, sample);
 
-    Comments:
-    ${sampleComments}
-
-    Your task:
-    1. Identify the PRIMARY narrative - what most people are talking about
-    2. Find secondary narratives - other significant discussion themes
-    3. Determine the sentiment and key topics for each narrative
-    4. Estimate the percentage of comments for each narrative based on the sample
-
-    Format your response as valid JSON matching this schema:
-    ${JSON.stringify(narrativeSchema.shape, null, 2)}
-
-    Make sure to:
-    - Keep the response as valid JSON
-    - Include all required fields
-    - Don't include any additional text outside the JSON
-    - Ensure percentages add up to approximately 100%`;
-
+    /* ------------------------------
+     *  TRY OLLAMA FIRST
+     * ------------------------------ */
     try {
-      const response = await retryWithBackoff(async () => {
-        const result = await askOllama(process.env.OLLAMA_MODEL_LLM!, prompt);
-        try {
-          // Try to extract JSON from the response
-          const jsonMatch = result.match(/```json\n([\s\S]*?)\n```/) || result.match(/{[\s\S]*}/);
-          const jsonString = jsonMatch ? jsonMatch[0].replace(/```(json)?/g, '').trim() : result;
-          return JSON.parse(jsonString);
-        } catch (e) {
-          console.error("Failed to parse Ollama response:", e);
-          throw new Error("Invalid JSON response from Ollama");
-        }
-      });
+      const json = await analyzeWithOllama(prompt);
 
-      const result = narrativeSchema.safeParse(response);
-      
-      if (!result.success) {
-        console.error("[v0] Invalid response format from Ollama:", result.error);
-        throw new Error("Invalid response format from AI");
-      }
+      const parsed = narrativeSchema.safeParse(json);
+      if (!parsed.success) throw new Error("Invalid Ollama JSON");
 
-      return Response.json(result.data);
+      return Response.json(parsed.data);
+    } catch (e) {
+      console.error("[v0] Ollama failed → fallback to OpenAI", e);
+    }
+
+    /* ------------------------------
+     *  FALLBACK → OPENAI
+     * ------------------------------ */
+    try {
+      const result = await analyzeWithOpenAI(prompt);
+      return Response.json(result);
     } catch (error: any) {
-      console.error("[v0] Error analyzing narratives with Ollama:", error);
-      
-      if (error.message.includes("Invalid JSON")) {
+      console.error("[v0] OpenAI fallback error:", error);
+
+      if (
+        error?.status === 429 ||
+        error?.message?.includes("quota") ||
+        error?.message?.includes("insufficient_quota")
+      ) {
         return Response.json(
-          { error: "The AI returned an invalid response format. Please try again." },
-          { status: 500 }
+          {
+            error:
+              "OpenAI quota exceeded. Check your billing at https://platform.openai.com/account/billing",
+          },
+          { status: 429 }
         );
       }
 
-      throw error;
+      return Response.json(
+        { error: "Failed to analyze narratives", details: error.message },
+        { status: 500 }
+      );
     }
-  } catch (error) {
-    console.error("[v0] Error in narrative analysis:", error);
+  } catch (error: any) {
+    console.error("[v0] Root error:", error);
     return Response.json(
-      { 
-        error: error instanceof Error ? error.message : "Failed to analyze narratives",
-        details: process.env.NODE_ENV === 'development' ? error : undefined
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to analyze narratives",
       },
       { status: 500 }
     );

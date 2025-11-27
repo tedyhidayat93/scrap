@@ -37,16 +37,16 @@ export function DashboardHeader({ username, type }: DashboardHeaderProps) {
     <header className="border-b border-border bg-card">
       <div className="container mx-auto px-6 py-4">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-card-foreground">
-              TikTok Comment Analytics
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              {username
-                ? `Analyzing ${videosAnalyzed} of ${totalVideos} videos from @${username}`
-                : "Enter a TikTok username to start analyzing"}
-            </p>
-          </div>
+           <div>
+          <h1 className="text-2xl font-semibold tracking-tight text-card-foreground">
+            Social Media Analytics
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            {username
+              ? `Analyzing ${videosAnalyzed} of ${totalVideos} videos from @${username}`
+              : "Select platform and enter a username/video URL/keyword to start analyzing"}
+          </p>
+        </div>
           <div className="flex flex-wrap items-center gap-3">
             <Select defaultValue="7d">
               <SelectTrigger className="w-[140px]">

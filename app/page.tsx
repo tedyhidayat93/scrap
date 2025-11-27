@@ -16,6 +16,7 @@ import { ContraComments } from "@/components/contra-comments";
 import { IntelligenceAnalysis } from "@/components/intelligence-analysis";
 import { useState, useEffect, useRef } from "react";
 import { useTikTokComments } from "@/hooks/use-tiktok-comments";
+import { PlatformType, QueryType } from "@/interfaces/global";
 
 export default function Page() {
   const [query, setQuery] = useState<string>("");
@@ -29,6 +30,7 @@ export default function Page() {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const hasLoadedMore = useRef(false);
+  const [platform, setPlatform] = useState<PlatformType>("");
   const [crawlingLogs, setCrawlingLogs] = useState<
     Array<{
       timestamp: string;
@@ -54,27 +56,25 @@ export default function Page() {
 
   const handleSearch = (
     newQuery: string,
-    type: "username" | "video" | "keyword",
+    newPlatform: PlatformType,
+    type: QueryType,
     latest = false
   ) => {
     setIsAnalyzing(true);
+    setPlatform(newPlatform);
     setQuery(newQuery);
     setQueryType(type);
     setLatestOnly(latest);
-    setAdditionalComments([]);
-    setCursor(null);
-    setHasMore(true);
-    hasLoadedMore.current = false;
+
     setCrawlingLogs([
       {
         timestamp: new Date().toLocaleTimeString(),
         type: "info",
-        message: `Starting analysis for ${type}: ${newQuery}${
-          latest ? " (latest video only)" : ""
-        }`,
+        message: `Starting analysis for ${newPlatform} type ${type}: ${newQuery}`,
       },
     ]);
-    setTimeout(() => setIsAnalyzing(false), 2000);
+
+    setTimeout(() => setIsAnalyzing(false), 1200);
   };
 
   useEffect(() => {
@@ -161,16 +161,19 @@ export default function Page() {
   };
 
   const allComments = [...apiData.comments, ...additionalComments];
-
   const totalComments = apiData.totalComments + additionalComments.length;
-  const realComments =
-    apiData.realComments + additionalComments.filter((c) => !c.isBot).length;
-  const botComments = totalComments - realComments;
   const uniqueUsers = new Set(
     [...apiData.comments, ...additionalComments].map(
       (c) => c.user?.unique_id || c.user?.id
     )
   ).size;
+  const uniqueUsersList = new Set(
+    [...apiData.comments, ...additionalComments].map(
+      (c) => c.user?.unique_id || c.user?.id
+    )
+  ) as any;
+  const realComments = apiData.realComments + additionalComments.filter((c) => !c.isBot).length;
+  const botComments = totalComments - realComments;
 
   const allCommentsData = [...apiData.comments, ...additionalComments];
   const sentimentCounts = {
@@ -185,6 +188,7 @@ export default function Page() {
     totalComments,
     realComments,
     botComments,
+    uniqueUsersList,
     uniqueUsers,
     sentimentCounts,
     queryType,

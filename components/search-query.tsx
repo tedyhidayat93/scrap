@@ -8,10 +8,15 @@ import { Card } from "@/components/ui/card";
 import { Search, Loader2, User, Video, Hash } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { PLATFORMS } from "@/constant/global";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { PlatformType } from "@/interfaces/global";
+
 
 interface SearchQueryProps {
   onSearch: (
     query: string,
+    platform: PlatformType,
     type: "username" | "video" | "keyword",
     latestOnly?: boolean
   ) => void;
@@ -28,6 +33,7 @@ export function SearchQuery({
 }: SearchQueryProps) {
   const [inputValue, setInputValue] = useState("");
   const [latestOnly, setLatestOnly] = useState(false);
+  const [selectedPlatform, setSelectedPlatform] = useState<PlatformType>("");
 
   const detectQueryType = (input: string): "username" | "video" | "keyword" => {
     if (input.includes("tiktok.com") && input.includes("/video/")) {
@@ -45,7 +51,8 @@ export function SearchQuery({
   const handleSearch = () => {
     if (inputValue.trim()) {
       const type = detectQueryType(inputValue.trim());
-      onSearch(inputValue.trim(), type, latestOnly);
+      // onSearch(inputValue.trim(), type, latestOnly);
+      onSearch(inputValue.trim(), selectedPlatform, type, latestOnly);
       setInputValue("");
     }
   };
@@ -98,14 +105,33 @@ export function SearchQuery({
       <div className="space-y-4">
         <div>
           <h2 className="text-lg font-semibold text-card-foreground mb-1">
-            TikTok Analysis
+            Search Query
           </h2>
           <p className="text-sm text-muted-foreground">
-            Enter a keyword, username, or video URL to analyze comments
+            Select a platform and enter a keyword, username, or video URL to analyze comments
           </p>
         </div>
 
         <div className="flex gap-2">
+          <div className="border border-cyan-900/50 hover:border-cyan-900">
+            <Select 
+              value={selectedPlatform} 
+              onValueChange={(value: PlatformType) => setSelectedPlatform(value)}
+              disabled={isLoading}
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Select Platform" />
+              </SelectTrigger>
+              <SelectContent>
+                {PLATFORMS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    <option.icon className="w-4 h-4" />
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           <Input
             placeholder="e.g., #election, @charlidamelio, or video URL..."
             value={inputValue}

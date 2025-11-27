@@ -1,6 +1,12 @@
-import { askOllama } from "@/lib/ollama-client";
+import { NextResponse } from "next/server";
 import { z } from "zod";
+import { askOllama } from "@/lib/ollama-client";
+import { openai } from "@ai-sdk/openai";
+import { generateObject } from "ai";
 
+/* -------------------------------------------------------
+ * ZOD SCHEMA
+ * ----------------------------------------------------- */
 const counterNarrativeSchema = z.object({
   counterComments: z
     .array(
@@ -26,80 +32,108 @@ const counterNarrativeSchema = z.object({
   }),
 });
 
-function extractJsonFromResponse(response: string): any {
-  try {
-    const jsonMatch = response.match(/```(?:json)?\n([\s\S]*?)\n```/) || 
-                     response.match(/{[\s\S]*}/);
-    
-    if (!jsonMatch) {
-      throw new Error("No JSON found in response");
-    }
+/* -------------------------------------------------------
+ * UTIL: Retry with exponential backoff for Ollama
+ * ----------------------------------------------------- */
+async function retryWithBackoff<T>(
+  fn: () => Promise<T>,
+  maxRetries = 3,
+  initialDelay = 800
+): Promise<T> {
+  let lastErr: any;
 
-    const jsonString = jsonMatch[0].replace(/```(?:json)?/g, '').trim();
-    return JSON.parse(jsonString);
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      return await fn();
+    } catch (err: any) {
+      lastErr = err;
+
+      const retryable =
+        err?.message?.includes("network") ||
+        err?.message?.includes("timeout") ||
+        err?.message?.includes("connection");
+
+      if (!retryable || i === maxRetries - 1) throw err;
+
+      const delay = initialDelay * Math.pow(2, i);
+      console.warn(`[Ollama] Retry attempt ${i + 1}, waiting ${delay}ms`);
+      await new Promise((r) => setTimeout(r, delay));
+    }
+  }
+
+  throw lastErr;
+}
+
+/* -------------------------------------------------------
+ * UTIL: Extract JSON from raw model text
+ * ----------------------------------------------------- */
+function extractJsonFromResponse(raw: string) {
+  try {
+    const match =
+      raw.match(/```json\n([\s\S]*?)```/) ||
+      raw.match(/```([\s\S]*?)```/) ||
+      raw.match(/{[\s\S]*}/);
+
+    if (!match) throw new Error("No JSON found in response");
+
+    const cleaned = match[0].replace(/```json|```/g, "").trim();
+    return JSON.parse(cleaned);
   } catch (e) {
-    console.error("Failed to parse JSON from response:", e);
+    console.error("❌ JSON Extract Error:", e);
     throw new Error("Invalid JSON response from AI");
   }
 }
 
+/* -------------------------------------------------------
+ * MAIN POST HANDLER
+ * ----------------------------------------------------- */
 export async function POST(req: Request) {
   try {
     const { comments, mainNarrative } = await req.json();
 
-    if (!comments || comments.length === 0) {
-      return Response.json({ error: "No comments provided" }, { status: 400 });
+    if (!comments?.length) {
+      return NextResponse.json({ error: "No comments provided" }, { status: 400 });
     }
 
-    // Take maximum 100 comments negative for AI
     const sampleComments = comments
-  .filter((c: any) => c.sentiment === "negative") // Only get negative comments
-  .slice(0, 100) // Take up to 100 negative comments
-  .map((c: any, idx: number) => `[${idx}] ${c.text}`)
-  .join("\n");
+      .filter((c: any) => c.sentiment === "negative")
+      .slice(0, 100)
+      .map((c: any, idx: number) => `[${idx}] ${c.text}`)
+      .join("\n");
 
     const prompt = `
-      Analyze these TikTok comments and identify which ones contradict or challenge the main narrative in an elegant and factual manner.
+Analyze these TikTok comments and identify which ones contradict or challenge the main narrative.
 
-      Main Narrative:
-      ${mainNarrative || "The dominant opinion in the comments"}
+Main Narrative:
+${mainNarrative || "The dominant opinion in the comments"}
 
-      Comments:
-      ${sampleComments}
+Comments:
+${sampleComments}
 
-      Your tasks:
-      1. Identify comments that contradict, challenge, or question the main narrative.
-      2. For each identified comment, generate:
-        - A refined counter-narrative sentence (field: "word") that is:
-          - Elegant, non-aggressive, and factual  
-          - Written in a formal tone and easy to understand  
-          - At least 10 words  
-          - Written in the SAME LANGUAGE as the original comment  
-      3. Also include:
-        - The reason why the comment is considered counter-narrative
-        - A counterScore (1-10)
-        - Related keywords
-      4. Return ONLY valid JSON matching this schema:
-      ${JSON.stringify(counterNarrativeSchema.shape, null, 2)}
+Return JSON ONLY with the following schema:
+${JSON.stringify(counterNarrativeSchema.shape, null, 2)}
 
-      The response must be valid JSON only, no other text.`;
+(Your output must be STRICT VALID JSON, no markdown, no backticks)
+`;
 
+    /* -------------------------------------------------------
+     * STEP 1: TRY OLLAMA WITH RETRY
+     * ----------------------------------------------------- */
     try {
-      const response = await askOllama(process.env.OLLAMA_MODEL_LLM!, prompt);
-      const parsedResponse = extractJsonFromResponse(response);
-      const result = counterNarrativeSchema.safeParse(parsedResponse);
+      const aiResponse = await retryWithBackoff(async () => {
+        const raw = await askOllama(process.env.OLLAMA_MODEL_LLM!, prompt);
+        return extractJsonFromResponse(raw);
+      });
 
-      if (!result.success) {
-        console.error("[v0] Invalid response format from Ollama:", result.error);
-        throw new Error("Invalid response format from AI");
-      }
+      const parsed = counterNarrativeSchema.safeParse(aiResponse);
+      if (!parsed.success) throw new Error("Ollama returned invalid schema");
 
-      // Match comments safely
-      const enrichedCounter = result.data.counterComments.map((ai) => {
+      // Match comments back to original
+      const enriched = parsed.data.counterComments.map((ai) => {
         const original = comments.find((c: any) => c.text === ai.text);
         return {
-          ...(original || {}), // take original data if found
-          text: ai.text, // fallback
+          ...(original || {}),
+          text: ai.text,
           counterScore: ai.counterScore,
           counterReason: ai.reason,
           counterWord: ai.word,
@@ -107,25 +141,61 @@ export async function POST(req: Request) {
         };
       });
 
-      return Response.json({
-        summary: result.data.summary,
-        counterComments: enrichedCounter,
+      return NextResponse.json({
+        summary: parsed.data.summary,
+        counterComments: enriched,
       });
-    } catch (error: any) {
-      console.error("[v0] Error analyzing counter-narratives:", error);
-      return Response.json(
-        {
-          error: error?.message || "Failed to analyze counter-narratives",
-        },
-        { status: 500 }
-      );
+    } catch (ollamaError) {
+      console.error("⚠️ Ollama failed → switching to OpenAI fallback");
     }
-  } catch (error: any) {
-    console.error("[v0] Error in counter-narratives analysis:", error);
-    return Response.json(
-      {
-        error: error?.message || "Failed to process request",
-      },
+
+    /* -------------------------------------------------------
+     * STEP 2: FALLBACK → OPENAI GPT-4o-mini
+     * ----------------------------------------------------- */
+    try {
+      const { object } = await generateObject({
+        model: openai("gpt-4o-mini"),
+        schema: counterNarrativeSchema,
+        prompt,
+        temperature: 0.2,
+      });
+
+      const enriched = object.counterComments.map((ai: any) => {
+        const original = comments.find((c: any) => c.text === ai.text);
+        return {
+          ...(original || {}),
+          text: ai.text,
+          counterScore: ai.counterScore,
+          counterReason: ai.reason,
+          counterWord: ai.word,
+          counterKeywords: ai.keywords,
+        };
+      });
+
+      return NextResponse.json({
+        summary: object.summary,
+        counterComments: enriched,
+      });
+    } catch (openaiError: any) {
+      console.error("❌ OpenAI fallback failed:", openaiError);
+
+      if (openaiError?.status === 429) {
+        return NextResponse.json(
+          {
+            error:
+              "OpenAI quota exceeded. Please check billing at platform.openai.com",
+          },
+          { status: 429 }
+        );
+      }
+
+      throw openaiError;
+    }
+  } catch (finalErr: any) {
+    console.error("❌ Final AI Error:", finalErr);
+
+    return NextResponse.json(
+      { error: finalErr?.message ?? "Failed to analyze comments" },
       { status: 500 }
     );
   }

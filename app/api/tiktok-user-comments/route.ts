@@ -3,7 +3,7 @@ import { AnyCnameRecord } from "node:dns";
 
 // const BASE_URL = "https://api.scrapecreators.com/v1"
 const API_KEY = process.env.TIKTOK_API_KEY!;
-const BASE_URL = "https://api.scrapecreators.com/v1";
+const BASE_URL = process.env.SCRAPPER_API_KEY!;
 const MAX_COMMENTS = 100000; //100.000 comments target fetch
 
 function parseTikTokUrl(
