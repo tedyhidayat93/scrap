@@ -34,11 +34,13 @@ export default function Page() {
     queryType: QueryType;  // Changed from "username" to QueryType
     platform: PlatformType;
     latestOnly: boolean;
+    targetData: number;
   }>({
     query: "",
     queryType: "username",
     platform: "tiktok",
     latestOnly: false,
+    targetData: 10,
   });
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [additionalComments, setAdditionalComments] = useState<any[]>([]);
@@ -56,6 +58,7 @@ export default function Page() {
   const { addHistory } = useSearchHistory()
 
   const apiData = useTikTokComments(
+    searchParams.targetData,
     searchParams.query,
     searchParams.queryType,
     !hasLoadedMore.current,
@@ -107,7 +110,6 @@ export default function Page() {
     }
   };
 
-
   useEffect(() => {
     if (apiData.cursor !== undefined && apiData.cursor !== null) {
       console.log("[v0] Setting initial cursor from API:", apiData.cursor);
@@ -118,6 +120,7 @@ export default function Page() {
 
   const handleSearch = (
     newQuery: string,
+    targetDataValue: number,
     newPlatform: PlatformType,
     type: QueryType,
     latest = false
@@ -127,6 +130,7 @@ export default function Page() {
     // Update search params
     setSearchParams(prev => ({
       ...prev,
+      targetData: targetDataValue,
       query: newQuery,
       platform: newPlatform,
       queryType: type,

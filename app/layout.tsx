@@ -7,8 +7,8 @@ const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: 'Social Media Scrapper',
-  description: 'Social Media Scrapper Analytics',
+  title: 'Social Media Analyitic',
+  description: 'Social Media Analytics',
   generator: '-',
   icons: {
     icon: '/icon.svg',

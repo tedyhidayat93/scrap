@@ -14,12 +14,14 @@ const fetcher = async (url: string) => {
 };
 
 export function useTikTokComments(
+  targetData: number,
   query: string,
   type: "username" | "video" | "keyword",
   enabled = true,
   latestOnly = false
 ) {
   const shouldFetch =
+    targetData &&
     query &&
     query.length > 0 &&
     type &&

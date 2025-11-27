@@ -16,6 +16,7 @@ import { PlatformType } from "@/interfaces/global";
 interface SearchQueryProps {
   onSearch: (
     query: string,
+    targetData: number,
     platform: PlatformType,
     type: "username" | "video" | "keyword",
     latestOnly?: boolean
@@ -32,6 +33,7 @@ export function SearchQuery({
   isLoading,
 }: SearchQueryProps) {
   const [inputValue, setInputValue] = useState("");
+  const [targetDataValue, setTargetDataValue] = useState(10);
   const [latestOnly, setLatestOnly] = useState(false);
   const [selectedPlatform, setSelectedPlatform] = useState<PlatformType>("");
 
@@ -52,7 +54,7 @@ export function SearchQuery({
     if (inputValue.trim()) {
       const type = detectQueryType(inputValue.trim());
       // onSearch(inputValue.trim(), type, latestOnly);
-      onSearch(inputValue.trim(), selectedPlatform, type, latestOnly);
+      onSearch(inputValue.trim(), Number(targetDataValue), selectedPlatform, type, latestOnly);
       setInputValue("");
     }
   };
@@ -113,39 +115,57 @@ export function SearchQuery({
         </div>
 
         <div className="flex gap-2">
-          <div className="border border-cyan-900/50 hover:border-cyan-900">
-            <Select 
-              value={selectedPlatform} 
-              onValueChange={(value: PlatformType) => setSelectedPlatform(value)}
-              disabled={isLoading}
-            >
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Select Platform" />
-              </SelectTrigger>
-              <SelectContent>
-                {PLATFORMS.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    <option.icon className="w-4 h-4" />
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="space-y-2">
+            <Label htmlFor="platform">Platform</Label>
+            <div className="border border-cyan-900/50 hover:border-cyan-900">
+              <Select 
+                value={selectedPlatform} 
+                onValueChange={(value: PlatformType) => setSelectedPlatform(value)}
+                disabled={isLoading}
+              >
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Select Platform" />
+                </SelectTrigger>
+                <SelectContent>
+                  {PLATFORMS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      <option.icon className="w-4 h-4" />
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-          <Input
-            placeholder="e.g., #election, @charlidamelio, or video URL..."
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            onKeyPress={handleKeyPress}
-            className="flex-1 border border-cyan-900/50 hover:border-cyan-900"
-            disabled={isLoading}
-          />
+
+          <div className="space-y-2">
+            <Label htmlFor="targetData">Target Data</Label>
+            <Input
+              placeholder=""
+              value={targetDataValue}
+              type="number"
+              onChange={(e) => setTargetDataValue(Number(e.target.value))}
+              className="flex-1 border border-cyan-900/50 hover:border-cyan-900"
+              disabled={isLoading}
+            />
+          </div>
+          <div className="space-y-2 w-full">
+            <Label htmlFor="platform">Value</Label>
+            <Input
+              placeholder="e.g., #election, @charlidamelio, or video URL..."
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onKeyPress={handleKeyPress}
+              className="flex-1 border border-cyan-900/50 hover:border-cyan-900"
+              disabled={isLoading}
+            />
+          </div>
           <Button
             onClick={handleSearch}
             className={
               !inputValue.trim() || !inputValue || isLoading
-                ? "opacity-50 effect-hover cursor-not-allowed!"
-                : ""
+                ? "mt-5.5 opacity-50 effect-hover cursor-not-allowed!"
+                : "mt-5.5"
             }
             disabled={!inputValue.trim() || isLoading}
           >

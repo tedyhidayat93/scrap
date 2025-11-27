@@ -3,8 +3,8 @@ import { AnyCnameRecord } from "node:dns";
 
 // const BASE_URL = "https://api.scrapecreators.com/v1"
 const API_KEY = process.env.TIKTOK_API_KEY!;
-const BASE_URL = process.env.SCRAPPER_API_KEY!;
-const MAX_COMMENTS = 100000; //100.000 comments target fetch
+const BASE_URL = process.env.SCRAPPER_API_KEY!
+const DEFAULT_TARGET_DATA = "10";
 
 function parseTikTokUrl(
   url: string
@@ -28,9 +28,9 @@ function cleanUsername(input: string): string {
   return input.startsWith("@") ? input.substring(1) : input;
 }
 
-async function fetchTikTokUserVideos(handle: string) {
+async function fetchTikTokUserVideos(targetDataFetch:number , handle: string) {
   try {
-    const url = `${BASE_URL}/tiktok/profile/videos?handle=${handle}&amount=${MAX_COMMENTS}`;
+    const url = `${BASE_URL}/tiktok/profile/videos?handle=${handle}&max=${targetDataFetch}`;
     console.log("[v0] Fetching videos from:", url);
 
     const response = await fetch(url, {
@@ -72,15 +72,15 @@ async function fetchTikTokUserVideos(handle: string) {
   }
 }
 
-async function fetchTikTokVideoComments(videoUrl: string, cursor?: number) {
+async function fetchTikTokVideoComments(targetDataFetch: number, videoUrl: string, cursor?: number) {
   try {
     const url = cursor
       ? `${BASE_URL}/tiktok/video/comments?url=${encodeURIComponent(
           videoUrl
-        )}&count=100&limit=100&cursor=${cursor}`
+        )}&count=${targetDataFetch}&limit=${targetDataFetch}&cursor=${cursor}`
       : `${BASE_URL}/tiktok/video/comments?url=${encodeURIComponent(
           videoUrl
-        )}&count=100&limit=100`;
+        )}&count=${targetDataFetch}&limit=${targetDataFetch}`;
     console.log("[v0] Fetching comments from:", url);
 
     const response = await fetch(url, {
@@ -123,13 +123,13 @@ async function fetchTikTokVideoComments(videoUrl: string, cursor?: number) {
   }
 }
 
-async function fetchAllComments(videoUrl: string, max = 100) {
+async function fetchAllComments(targetDataFetch: number, videoUrl: string, max = 100) {
   let cursor: number | undefined = undefined;
   let all: any[] = [];
   let hasMore = true;
 
   while (hasMore && all.length < max) {
-    const res = await fetchTikTokVideoComments(videoUrl, cursor);
+    const res = await fetchTikTokVideoComments(targetDataFetch, videoUrl, cursor);
 
     if (res.error) break;
 
@@ -150,6 +150,7 @@ async function fetchAllComments(videoUrl: string, max = 100) {
 
 // stream fetch 
 async function fetchCommentsStream(
+  targetDataFetch: number,
   videoUrl: string,
   callback: (item: any) => void,   // setiap komentar akan dikirim ke UI
   max = 100
@@ -159,7 +160,7 @@ async function fetchCommentsStream(
   let hasMore = true;
 
   while (hasMore && total < max) {
-    const res = await fetchTikTokVideoComments(videoUrl, cursor);
+    const res = await fetchTikTokVideoComments(targetDataFetch, videoUrl, cursor);
 
     if (res.error) break;
 
@@ -195,7 +196,7 @@ async function fetchWithRetry(fn: Function, args: any[], retry = 3, delay = 1000
   }
 }
 
-async function fetchAllCommentsWithRetry(videoUrl: string, max = 100) {
+async function fetchAllCommentsWithRetry(videoUrl: string, max: number) {
   let cursor: number | undefined = undefined;
   let all: any[] = [];
   let hasMore = true;
@@ -223,7 +224,7 @@ async function fetchAllCommentsWithRetry(videoUrl: string, max = 100) {
 
 
 
-async function fetchTikTokVideoInfo(videoUrl: string) {
+async function fetchTikTokVideoInfo(targetDataFetch: number, videoUrl: string) {
   try {
     const url = `${BASE_URL}/tiktok/video?url=${encodeURIComponent(videoUrl)}`;
     console.log("[v0] Fetching video info from:", url);
@@ -470,7 +471,7 @@ function analyzeSentiment(text: string): "positive" | "negative" | "neutral" {
   return "neutral";
 }
 
-async function searchTikTokByKeyword(keyword: string, cursor?: number) {
+async function searchTikTokByKeyword(targetDataFetch: number, keyword: string, cursor?: number) {
   try {
     const cleanKeyword = keyword.startsWith("#")
       ? keyword.substring(1)
@@ -478,10 +479,10 @@ async function searchTikTokByKeyword(keyword: string, cursor?: number) {
     const url = cursor
       ? `${BASE_URL}/tiktok/search/keyword?query=${encodeURIComponent(
           cleanKeyword
-        )}&count=30&cursor=${cursor}`
+        )}&count=${targetDataFetch}&cursor=${cursor}`
       : `${BASE_URL}/tiktok/search/keyword?query=${encodeURIComponent(
           cleanKeyword
-        )}&count=30`;
+        )}&count=${targetDataFetch}`;
     console.log("[v0] Searching TikTok by keyword:", url);
 
     const response = await fetch(url, {
@@ -562,6 +563,7 @@ async function searchTikTokByKeyword(keyword: string, cursor?: number) {
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
+  const targetDataFetch = Number.parseInt(searchParams.get("targetData") || DEFAULT_TARGET_DATA);
   const query = searchParams.get("query");
   const type = searchParams.get("type") || "username";
   const cursor = searchParams.get("cursor")
@@ -611,6 +613,7 @@ export async function GET(request: Request) {
         allVideos.length < (latestOnly ? 1 : 100)
       ) {
         const searchResult = await searchTikTokByKeyword(
+          targetDataFetch,
           keyword,
           currentCursor
         );
@@ -680,7 +683,7 @@ export async function GET(request: Request) {
           const videoUrl = `https://www.tiktok.com/@${author}/video/${videoId}`;
           console.log("[v0] Fetching comments for video:", videoUrl);
 
-          const commentsResult = await fetchTikTokVideoComments(videoUrl);
+          const commentsResult = await fetchTikTokVideoComments(targetDataFetch, videoUrl);
 
           if (!commentsResult.error && commentsResult.data?.comments) {
             allComments.push(
@@ -803,7 +806,7 @@ export async function GET(request: Request) {
       const videoUrl = query;
       console.log("[v0] Analyzing single video:", videoUrl);
 
-      const videoInfoResult = await fetchTikTokVideoInfo(videoUrl);
+      const videoInfoResult = await fetchTikTokVideoInfo(targetDataFetch, videoUrl);
       let videoStats = null;
 
       if (!videoInfoResult.error && videoInfoResult.data) {
@@ -821,7 +824,7 @@ export async function GET(request: Request) {
         console.log("[v0] Video stats:", videoStats);
       }
 
-      const commentsResult = await fetchTikTokVideoComments(videoUrl);
+      const commentsResult = await fetchTikTokVideoComments(targetDataFetch, videoUrl);
 
       if (commentsResult.error) {
         return NextResponse.json(
@@ -838,8 +841,8 @@ export async function GET(request: Request) {
       }
 
       // const comments = commentsResult.data?.comments || [];
-      // const comments = await fetchAllComments(videoUrl, MAX_COMMENTS);
-      const comments = await fetchAllCommentsWithRetry(videoUrl, MAX_COMMENTS);
+      // const comments = await fetchAllComments(max: number);
+      const comments = await fetchAllCommentsWithRetry(videoUrl, targetDataFetch);
       const cursor = commentsResult.data?.cursor || null;
       const hasMore = commentsResult.data?.has_more || !!cursor;
 
@@ -903,7 +906,7 @@ export async function GET(request: Request) {
     const handle = cleanUsername(query);
     console.log("[v0] Analyzing user:", handle);
 
-    const videosResult = await fetchTikTokUserVideos(handle);
+    const videosResult = await fetchTikTokUserVideos(targetDataFetch, handle);
 
     if (videosResult.error) {
       return NextResponse.json(
@@ -949,7 +952,7 @@ export async function GET(request: Request) {
         console.log("[v0] Fetching comments for video:", videoUrl);
 
         // const comments = await fetchAllComments(videoUrl, 100);
-        const comments = await fetchAllCommentsWithRetry(videoUrl, 100);
+        const comments = await fetchAllCommentsWithRetry(videoUrl, targetDataFetch);
         allComments.push(
           ...comments.map((c) => ({
             ...c,
